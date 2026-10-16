@@ -73,6 +73,8 @@ jobs:
         env:
           BASE_URL: http://127.0.0.1:8000
           API_KEY: ci-acceptance-key
+          # Safe here: the target is the throwaway app and database inside this job.
+          ALLOW_DESTRUCTIVE_TESTS: "1"
         run: uv run pytest -m acceptance
 
       - name: App log

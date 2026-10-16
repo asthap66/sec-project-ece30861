@@ -1,0 +1,40 @@
+{
+  "description": "Invalid evidence bodies for an existing incident. Each must return 400 naming expected.field and must not attach evidence.",
+  "cases": [
+    {
+      "name": "unknown-category",
+      "body": {"category": "PROBABLY_TECHNICAL", "summary": "Bad category.", "source": "EDR", "collectedAt": "2025-03-14T10:00:00Z"},
+      "expected": {"httpStatus": 400, "field": "category"}
+    },
+    {
+      "name": "lowercase-category",
+      "body": {"category": "technical", "summary": "Categories are upper case.", "source": "EDR", "collectedAt": "2025-03-14T10:00:00Z"},
+      "expected": {"httpStatus": 400, "field": "category"}
+    },
+    {
+      "name": "missing-category",
+      "body": {"summary": "No category.", "source": "EDR", "collectedAt": "2025-03-14T10:00:00Z"},
+      "expected": {"httpStatus": 400, "field": "category"}
+    },
+    {
+      "name": "empty-summary",
+      "body": {"category": "TECHNICAL", "summary": "", "source": "EDR", "collectedAt": "2025-03-14T10:00:00Z"},
+      "expected": {"httpStatus": 400, "field": "summary"}
+    },
+    {
+      "name": "missing-source",
+      "body": {"category": "TECHNICAL", "summary": "No source.", "collectedAt": "2025-03-14T10:00:00Z"},
+      "expected": {"httpStatus": 400, "field": "source"}
+    },
+    {
+      "name": "collected-at-without-offset",
+      "body": {"category": "TECHNICAL", "summary": "No offset.", "source": "EDR", "collectedAt": "2025-03-14T10:00:00"},
+      "expected": {"httpStatus": 400, "field": "collectedAt"}
+    },
+    {
+      "name": "missing-collected-at",
+      "body": {"category": "TECHNICAL", "summary": "No timestamp.", "source": "EDR"},
+      "expected": {"httpStatus": 400, "field": "collectedAt"}
+    }
+  ]
+}

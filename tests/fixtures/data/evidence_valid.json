@@ -1,0 +1,35 @@
+{
+  "description": "Valid POST /incidents/{incidentId}/evidence bodies (AC-04, AC-05). expected.collectedAt is the same instant in UTC. The contract puts no future-time limit on collectedAt.",
+  "cases": [
+    {
+      "name": "contract-example-business-impact",
+      "body": {"category": "BUSINESS_IMPACT", "summary": "Order processing was unavailable for three hours.", "source": "Operations report", "collectedAt": "2026-09-21T17:30:00-04:00"},
+      "expected": {"collectedAt": "2026-09-21T21:30:00Z"}
+    },
+    {
+      "name": "ac04-technical-1",
+      "body": {"category": "TECHNICAL", "summary": "EDR flagged mass file encryption on db-01.", "source": "EDR console", "collectedAt": "2025-03-14T10:00:00Z"},
+      "expected": {"collectedAt": "2025-03-14T10:00:00Z"}
+    },
+    {
+      "name": "ac04-technical-2",
+      "body": {"category": "TECHNICAL", "summary": "Ransom note found in shared drive root.", "source": "File server audit log", "collectedAt": "2025-03-14T10:20:00-05:00"},
+      "expected": {"collectedAt": "2025-03-14T15:20:00Z"}
+    },
+    {
+      "name": "ac04-technical-3",
+      "body": {"category": "TECHNICAL", "summary": "Outbound connections to a known C2 address.", "source": "Firewall logs", "collectedAt": "2025-03-14T11:45:30+01:00"},
+      "expected": {"collectedAt": "2025-03-14T10:45:30Z"}
+    },
+    {
+      "name": "legal",
+      "body": {"category": "LEGAL", "summary": "Outside counsel notified of possible disclosure obligations.", "source": "Legal department memo", "collectedAt": "2025-03-15T09:00:00Z"},
+      "expected": {"collectedAt": "2025-03-15T09:00:00Z"}
+    },
+    {
+      "name": "other",
+      "body": {"category": "OTHER", "summary": "Press inquiry received about the outage.", "source": "Communications team", "collectedAt": "2025-03-15T13:00:00Z"},
+      "expected": {"collectedAt": "2025-03-15T13:00:00Z"}
+    }
+  ]
+}
