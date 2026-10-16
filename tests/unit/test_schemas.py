@@ -3,6 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
+from app.config import DESCRIPTION_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_LENGTH
 from app.schemas import (
     EvidenceCategory,
     EvidenceCreate,
@@ -128,3 +129,25 @@ def test_non_contract_timestamp_formats(
         IncidentCreate.model_validate({**incident_payload, "discoveredAt": value})
     with pytest.raises(ValidationError):
         EvidenceCreate.model_validate({**evidence_payload, "collectedAt": value})
+
+
+@pytest.mark.parametrize(
+    ("field", "limit"),
+    [
+        ("title", TITLE_MAX_LENGTH),
+        ("description", DESCRIPTION_MAX_LENGTH),
+        ("reporterName", SHORT_TEXT_MAX_LENGTH),
+    ],
+)
+def test_existing_storage_limits(incident_payload: dict[str, str], field: str, limit: int) -> None:
+    IncidentCreate.model_validate({**incident_payload, field: "x" * limit})
+    with pytest.raises(ValidationError):
+        IncidentCreate.model_validate({**incident_payload, field: "x" * (limit + 1)})
+
+
+def test_existing_source_storage_limit(evidence_payload: dict[str, str]) -> None:
+    EvidenceCreate.model_validate({**evidence_payload, "source": "x" * SHORT_TEXT_MAX_LENGTH})
+    with pytest.raises(ValidationError):
+        EvidenceCreate.model_validate(
+            {**evidence_payload, "source": "x" * (SHORT_TEXT_MAX_LENGTH + 1)}
+        )

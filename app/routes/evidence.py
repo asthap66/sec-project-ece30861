@@ -8,11 +8,11 @@ from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
-from app.routes.feature_support import FeatureRoute, get_incident_service
+from app.routes.feature_support import get_incident_service
 from app.schemas import EvidenceCreate, EvidenceCreated
 from app.services.incidents import IncidentService
 
-router = APIRouter(route_class=FeatureRoute)
+router = APIRouter()
 Service = Annotated[IncidentService, Depends(get_incident_service)]
 
 # Body parsing happens after parent lookup (Model 4), including malformed JSON.

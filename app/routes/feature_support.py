@@ -1,50 +1,13 @@
-"""Feature-local error mapping until shared infrastructure is integrated."""
+"""Connect feature services to the shared request-scoped database dependency."""
 
-from collections.abc import Callable, Coroutine
-from typing import Any
+from typing import Annotated
 
-from fastapi import HTTPException, Request, Response
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from fastapi.routing import APIRoute
-from pydantic.alias_generators import to_camel
+from fastapi import Depends
+from sqlalchemy.orm import Session
 
-from app.services.incidents import IncidentNotFoundError, IncidentService
+from app.db import get_db
+from app.services.incidents import IncidentService, SQLAlchemyIncidentRepository
 
 
-class FeatureRoute(APIRoute):
-    def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
-        handler = super().get_route_handler()
-
-        async def handle(request: Request) -> Response:
-            try:
-                return await handler(request)
-            except RequestValidationError as exc:
-                fields = sorted(
-                    {
-                        to_camel(str(error["loc"][1]))
-                        for error in exc.errors()
-                        if len(error["loc"]) > 1 and isinstance(error["loc"][1], str)
-                    }
-                )
-                message = (
-                    f"Invalid request fields: {', '.join(fields)}"
-                    if fields
-                    else "Invalid request body"
-                )
-                return JSONResponse(
-                    status_code=400,
-                    content={"error": "INVALID_REQUEST", "message": message},
-                )
-            except IncidentNotFoundError:
-                return JSONResponse(
-                    status_code=404,
-                    content={"error": "NOT_FOUND", "message": "Incident not found"},
-                )
-
-        return handle
-
-
-def get_incident_service() -> IncidentService:
-    """Person 1 must supply a request-scoped persistent repository adapter."""
-    raise HTTPException(status_code=503, detail="Incident persistence is not configured")
+def get_incident_service(session: Annotated[Session, Depends(get_db)]) -> IncidentService:
+    return IncidentService(SQLAlchemyIncidentRepository(session))

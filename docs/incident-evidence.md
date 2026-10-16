@@ -1,48 +1,49 @@
-# Incident and evidence feature integration
+# Incident and evidence integration
 
-## Implementation status
+## Current implementation
 
-The schemas, service, and routers are implemented and tested in an isolated
-FastAPI application with a **test-only repository**. Production `app/main.py`
-remains the original scaffold. Database, authentication, and shared error
-modules are still placeholders. Persistent-storage and deployed acceptance
-criteria have not been verified.
+The production FastAPI app registers POST `/incidents`, GET
+`/incidents/{incidentId}`, and POST `/incidents/{incidentId}/evidence`.
+`get_incident_service` wraps Person 1's `get_db` session in
+`SQLAlchemyIncidentRepository`. There is no second engine, session factory,
+authentication system, or production in-memory store.
 
-## Endpoints and JSON models
+Reviewed against user-supplied Phase 2 - Pod.docx, pod spec v1.0: REQ-01–03/14,
+Q3.2 Model 4, Q5.1–5.2, AC-01–05, and Q6.1. Phase 4/5 operations are absent.
 
-Reviewed against the user-supplied **Phase 2 - Pod.docx**, pod specification
-v1.0 (Q1.3), on October 16, 2026: REQ-01–03/14, Q3.2 Model 4, Q5.1–5.2,
-AC-01–05, and the Q6.1 Phase 3 scope. Embedded models were also inspected.
+## API contract
 
-All JSON names are camelCase. Writes are append-only; no edit/delete routes exist.
+All JSON names are camelCase. Required text rejects blanks and preserves the
+submitted text. Request timestamps use RFC 3339 with an offset; responses use UTC.
+Discovery cannot be in the future. Evidence collection has no extra time-order
+or future-date restriction. Categories: TECHNICAL, BUSINESS_IMPACT, LEGAL, OTHER.
 
-| Operation | Request | Success |
+| Operation | Request fields | Success |
 | --- | --- | --- |
-| POST `/incidents` | `title`, `description`, `discoveredAt`, `reporterName` | 201: `incidentId`, `status` (`OPEN`) |
+| POST `/incidents` | title, description, discoveredAt, reporterName | 201: incidentId, status (`OPEN`) |
 | GET `/incidents/{incidentId}` | No body | 200: incident detail below |
-| POST `/incidents/{incidentId}/evidence` | `category`, `summary`, `source`, `collectedAt` | 201: `evidenceId`, `recordedAt` |
+| POST `/incidents/{incidentId}/evidence` | category, summary, source, collectedAt | 201: evidenceId, recordedAt |
 
-Incident detail contains `incidentId`, `title`, `description`, `discoveredAt`,
-`reporterName`, `status`, `evidence`, `currentDecision`, and `filing`. The last two
-are null in Phase 3. `createdAt` is not exposed. Each evidence item contains
-`evidenceId`, `category`, `summary`, `source`, `collectedAt`, and `recordedAt`;
-no nested `incidentId` is exposed.
+Incident detail contains incidentId, title, description, discoveredAt,
+reporterName, status, evidence, currentDecision, and filing. The last two are null
+in Phase 3. Each evidence object contains evidenceId, category, summary, source,
+collectedAt, and recordedAt. Internal createdAt and nested incidentId are absent.
 
-Example creation request:
+Example incident request:
 
 ```json
 {
   "title": "Synthetic incident",
-  "description": "Synthetic description",
+  "description": "Synthetic report",
   "discoveredAt": "2020-01-01T10:00:00-04:00",
   "reporterName": "Test team"
 }
 ```
 
-Creation response (the actual generated ID varies):
+Example creation response:
 
 ```json
-{"incidentId": "INC-<uuid hex>", "status": "OPEN"}
+{"incidentId": "INC-001", "status": "OPEN"}
 ```
 
 Example evidence request:
@@ -50,118 +51,113 @@ Example evidence request:
 ```json
 {
   "category": "BUSINESS_IMPACT",
-  "summary": "Synthetic service disruption",
-  "source": "Synthetic service logs",
+  "summary": "Synthetic impact",
+  "source": "Synthetic logs",
   "collectedAt": "2020-01-01T11:00:00-04:00"
 }
 ```
 
-Evidence creation returns only `evidenceId` and server-generated UTC `recordedAt`.
+Evidence creation returns only evidenceId and recordedAt. PostgreSQL generates
+public IDs using the existing computed columns (`INC-001`, `EVD-001`, increasing
+without truncation after 999) and sets created_at/recorded_at using its server
+clock. The client cannot set these through the request schemas.
 
-Required text must be a nonblank string; original whitespace is preserved.
-Timestamps must include a timezone and are normalized to UTC, retaining the
-instant. Discovery cannot be in the future. Evidence collection has no additional
-past/future restriction. Categories: TECHNICAL, BUSINESS_IMPACT, LEGAL, OTHER.
-Maximum lengths remain an open team decision. Add agreed limits to field
-annotations in `app/schemas.py`; `RequiredText` centralizes common validation.
+## Persistence and errors
 
-`IncidentStatus` includes OPEN, NOT_MATERIAL, MATERIAL_PENDING_FILING, and FILED.
-Creation sets OPEN. Retrieval preserves stored status; no later-phase transitions
-are implemented.
+Each request uses the shared session dependency. The adapter flushes to fetch
+server-generated values, builds the response snapshot, and commits once. It
+rolls back on failure. Evidence uses the existing incident foreign key and locks
+the parent until insertion commits to protect against concurrent reset/deletion.
+Retrieval eagerly loads linked evidence in internal ID order.
 
-Feature-local `FeatureRoute` translates request-validation failures (including
-malformed JSON) to 400 and `IncidentNotFoundError` to 404:
+The existing `ApiKeyMiddleware` protects the feature routes before routing or
+body validation. The feature introduces no additional public paths. Health and
+the shared middleware's existing generated-documentation exemptions are unchanged.
+
+`IncidentNotFoundError` subclasses shared `ApiError` (404/NOT_FOUND). Validation
+raises FastAPI's `RequestValidationError`, mapped by shared handlers to 400 with
+a field-specific code/message, for example:
 
 ```json
-{"error": "INVALID_REQUEST", "message": "Invalid request fields: discoveredAt"}
+{"error": "INVALID_DESCRIPTION", "message": "description is required"}
 ```
 
-```json
-{"error": "NOT_FOUND", "message": "Incident not found"}
-```
+The previous feature-local error handlers and unconfigured-service 503 guard
+have been removed. Shared handlers also format 401 and 405 errors. Evidence
+checks the parent before parsing its body, so unknown parents return 404 even
+for malformed JSON, following Model 4. No edit/delete routes exist. Evidence may
+be attached in any stored status; these operations never change incident status.
 
-These error codes/messages are provisional pending agreement with Person 1.
-No global exception handler is installed. Model 4 specifies authentication,
-endpoint/method, incident existence, body validation, then workflow-state checks.
-Evidence routing explicitly checks the parent before parsing the body: unknown
-parents return 404 even for malformed JSON. Errors name invalid camelCase fields;
-malformed JSON reports an invalid request body. Request timestamps reject numeric
-epochs and strings lacking the required timestamp structure before Pydantic
-parsing. Authentication precedence, standard 405 errors, and global error
-formatting remain shared infrastructure tasks. Authentication must also precede
-unknown-route/method errors, requiring application-level coordination beyond
-router dependencies.
+## Configuration and unresolved decisions
 
-## Person 1 handoff
+- Server requires DATABASE_URL and API_KEY. Apply the existing migration with
+  `uv run alembic upgrade head` before serving requests.
+- TEST_DATABASE_URL must point to a disposable PostgreSQL database: database
+  fixtures migrate it and clear all incident/evidence data. BASE_URL and API_KEY
+  are needed for live acceptance tests.
+- Shared config and the existing migration currently constrain title to 200,
+  description to 5000, reporterName/source to 500 characters. Request validation
+  now uses these same constants to return 400 instead of a database truncation
+  error. These are existing provisional storage limits, **not pod-approved
+  contract decisions**. Final limits require agreement and coordinated
+  schema/config/migration updates. Summary remains unrestricted nonblank text.
+- Instructor OpenAPI is absent; the GET collection route discrepancy and exact
+  error-code naming still need pod confirmation. See `contract-issues.md`.
 
-1. Implement `IncidentRepository` from `app/services/incidents.py` using existing
-   SQLAlchemy models and request-scoped sessions. `create_incident` and
-   `add_evidence` must commit atomically or roll back. `get_incident` returns an
-   `IncidentDetail` snapshot with all linked evidence. Evidence insertion must
-   enforce the parent foreign key and raise `IncidentNotFoundError` if missing,
-   including if the parent disappears after the service existence check. Enforce
-   unique public IDs in the database. Store internal `created_at` in the adapter
-   if required by the database; it is intentionally absent from API schemas.
-2. Supply an `IncidentService` via `get_incident_service` dependency override (or
-   replace that dependency with a request-scoped provider). The default raises
-   503 because persistence is unconfigured; its response is an integration guard,
-   not a finalized contract error.
-3. No existing ID generator was present. `new_public_id` provisionally uses UUIDs
-   with INC/EVD prefixes. Confirm the public format or inject the agreed generator
-   through `IncidentService(id_factory=...)`; example IDs do not imply sequences.
-4. Register both routers from `app.routes.incidents` and `app.routes.evidence` in
-   `app/main.py`, applying `Depends(require_api_key)` to both. Do this only when
-   authentication and the persistent provider are ready. Preserve public health.
-5. Integrate 400/404 mapping with the shared error infrastructure, then remove the
-   feature-local mapping when the global handlers provide equivalent behavior.
-   Follow Model 4's authentication-first ordering and confirm final error
-   codes/messages. Preserve the evidence parent-before-body check when replacing
-   feature-local handling.
-6. Confirm maximum text lengths and the instructor's OpenAPI contract. Verify
-   real PostgreSQL persistence, rollback behavior, reset, and restart behavior.
-
-The repository interface intentionally takes API snapshots to avoid inventing
-Person 1's ORM model names or a second database architecture. A database adapter
-should map these snapshots to internal models and back.
-
-## Tests
-
-After the normal project setup (`uv sync --locked`), run:
+## Verification and how to run
 
 ```powershell
-uv run pytest
-uv run ruff check .
-uv run ruff format --check .
-uv run mypy
+.\.venv\Scripts\python.exe -m pytest -p no:cacheprovider
+.\.venv\Scripts\python.exe -m ruff check app tests
+.\.venv\Scripts\python.exe -m ruff format --check app tests
+.\.venv\Scripts\python.exe -m mypy
 ```
 
-If using an already provisioned virtual environment:
+For PostgreSQL-backed tests, provision a dedicated throwaway PostgreSQL service,
+set TEST_DATABASE_URL to its SQLAlchemy URL, then run:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pytest tests/infrastructure/test_database.py tests/infrastructure/test_feature_database.py
 ```
 
-`tests/unit/conftest.py` mounts the routers on an isolated app and injects a fake
-repository. Its clock is fixed and its incident timestamps are historical.
-Tests exercise response shapes, validation/400/404, ID uniqueness, server time,
-three technical evidence records, business-impact preservation, parent isolation,
-and rejected writes. They do not establish PostgreSQL or authentication coverage.
+The existing CI service already supplies TEST_DATABASE_URL, so these tests are
+included in its non-acceptance pytest run without changing CI.
 
-Local verification on October 16, 2026: 77 tests passed; Ruff lint and format
-checks on `app`/`tests` and mypy passed. Python 3.12.5 was used. Installed
-FastAPI, Pydantic, pytest, HTTPX, Starlette, Ruff, and mypy versions match
-`uv.lock`. The environment reports a Starlette HTTPX deprecation warning.
+Verification scope:
 
-## Files
+- `tests/unit`: schemas, service interface, and mocked-session rollback behavior;
+  test-only repository, not PostgreSQL.
+- `tests/infrastructure/test_feature_routes.py`: real app registration, shared
+  authentication and errors, request precedence, append-only routes; injects a
+  test-only repository, not PostgreSQL.
+- `tests/infrastructure/test_feature_database.py`: real provider, PostgreSQL
+  generated IDs/timestamps, create/retrieve, multiple evidence records and
+  business impact, parent isolation, rejected writes, reset, and a new app/pool
+  persistence check. Skips without TEST_DATABASE_URL. A new app/pool does not
+  establish persistence through an actual process/container restart.
 
-- `app/schemas.py`: contract schemas and validation.
-- `app/routes/incidents.py`, `app/routes/evidence.py`: feature routers.
-- `app/routes/feature_support.py`: service injection and local error mapping.
-- `app/services/incidents.py`: repository protocol and reusable service.
-- `tests/unit/conftest.py`: isolated fixture and test repository.
-- `tests/unit/test_schemas.py`, `test_incidents.py`, `test_evidence.py`: tests.
-- `tests/__init__.py`, `tests/unit/__init__.py`: package markers for type checking.
-- `docs/incident-evidence.md`: this handoff.
-- `docs/models/README.md`: API information models and request flow.
+Local environment has no TEST_DATABASE_URL, Docker/PostgreSQL command, or
+PostgreSQL listener on 5432. **No tests exercised PostgreSQL locally.** Live
+acceptance/deployment, HTTPS, actual restart persistence, and performance remain
+unverified. The environment emits a Starlette HTTPX deprecation warning.
 
-Infrastructure files and dependency declarations are unchanged.
+Final local run on October 16, 2026: **117 passed, 16 skipped, 0 failed**.
+Eleven skipped tests require PostgreSQL; five require a running acceptance
+service. Ruff lint/format checks and mypy passed. Changes remain uncommitted
+on `feature/incident-evidence-api`.
+
+## Modified files
+
+- app/main.py: register feature routers.
+- app/routes/incidents.py and evidence.py: use shared handlers via plain routers.
+- app/routes/feature_support.py: shared-session service provider.
+- app/services/incidents.py: SQLAlchemy repository and shared domain error.
+- app/schemas.py: reuse current storage limits.
+- tests/unit/conftest.py: update the fake repository interface and shared handlers.
+- tests/unit/test_schemas.py and test_repository.py: boundaries and rollback.
+- tests/infrastructure/test_auth.py and test_errors.py: keep non-database tests
+  independent of the newly mounted database routes.
+- tests/infrastructure/test_feature_routes.py and test_feature_database.py:
+  app integration and conditional PostgreSQL workflow coverage.
+- docs/incident-evidence.md, docs/models/README.md, docs/setup.md, and
+  docs/contract-issues.md: current integration and verification status.

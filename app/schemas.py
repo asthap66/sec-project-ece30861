@@ -1,7 +1,7 @@
 """Phase 3 request/response schemas for incidents and evidence.
 
-Exact maximum lengths, ID formats, and whitespace policy still require the
-agreed OpenAPI contract. Required text rejects blank values but is preserved.
+Maximum lengths reuse the shared database configuration pending pod agreement.
+Required text rejects blank values but is preserved.
 """
 
 import re
@@ -11,6 +11,8 @@ from typing import Annotated
 
 from pydantic import AwareDatetime, BaseModel, BeforeValidator, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
+
+from app.config import DESCRIPTION_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_LENGTH
 
 
 class APISchema(BaseModel):
@@ -58,10 +60,10 @@ class IncidentStatus(StrEnum):
 
 
 class IncidentCreate(APISchema):
-    title: RequiredText
-    description: RequiredText
+    title: RequiredText = Field(max_length=TITLE_MAX_LENGTH)
+    description: RequiredText = Field(max_length=DESCRIPTION_MAX_LENGTH)
     discovered_at: RequestTimestamp
-    reporter_name: RequiredText
+    reporter_name: RequiredText = Field(max_length=SHORT_TEXT_MAX_LENGTH)
 
     @field_validator("title", "description", "reporter_name")
     @classmethod
@@ -81,7 +83,7 @@ class IncidentCreate(APISchema):
 class EvidenceCreate(APISchema):
     category: EvidenceCategory
     summary: RequiredText
-    source: RequiredText
+    source: RequiredText = Field(max_length=SHORT_TEXT_MAX_LENGTH)
     collected_at: RequestTimestamp
 
     @field_validator("summary", "source")

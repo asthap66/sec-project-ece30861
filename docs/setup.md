@@ -26,7 +26,9 @@ uv sync                # creates .venv with Python 3.12, plus runtime and dev de
 uv run uvicorn app.main:app --reload
 ```
 
-The scaffold serves only FastAPI's generated docs (`/docs`, `/openapi.json`). It has no business endpoints yet.
+The app registers health, reset, incident creation/retrieval, and evidence
+attachment endpoints. Configure DATABASE_URL/API_KEY and apply migrations before
+using the persistent endpoints. See [feature integration](incident-evidence.md).
 
 ## Start local PostgreSQL
 
@@ -52,7 +54,8 @@ uv run mypy
 uv run pytest
 ```
 
-Tests that need a database (`tests/infrastructure/test_database.py`) are
+Tests that need a database (`tests/infrastructure/test_database.py` and
+`tests/infrastructure/test_feature_database.py`) are
 skipped unless `TEST_DATABASE_URL` points at a **disposable** PostgreSQL: they
 reset it. For example, against the local container:
 
@@ -77,7 +80,9 @@ Runs against a deployed service are done separately and are never triggered from
 ## Current limitations
 
 - Implemented: `GET /health` (public), `POST /reset`, API-key authentication on every other path, the contract's error format, request logging, the Incident/Evidence models and first migration.
-- Not yet: the incident and evidence routes (Astha), and deployment over HTTPS.
+- Incident/evidence routes now use the shared models, session, auth, and error
+  infrastructure. Local PostgreSQL verification and deployment over HTTPS remain
+  unverified; see `docs/incident-evidence.md` for the test scope.
 - Field length limits for `title`/`description` are placeholders in `app/config.py` until the pod agrees on numbers (`docs/contract-issues.md` #3).
 
 ## Configuration

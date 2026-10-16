@@ -1,67 +1,111 @@
-"""Incident/evidence operations; persistence is supplied by infrastructure."""
+"""Incident/evidence business operations and the shared SQLAlchemy adapter."""
 
-from collections.abc import Callable
-from datetime import UTC, datetime
 from typing import Protocol
-from uuid import uuid4
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
+
+from app.errors import ApiError
+from app.models import Evidence, Incident
 from app.schemas import (
     EvidenceCreate,
     EvidenceResponse,
     IncidentCreate,
     IncidentDetail,
+    IncidentStatus,
 )
 
 
-class IncidentNotFoundError(Exception):
-    """The requested incident does not exist."""
+class IncidentNotFoundError(ApiError):
+    def __init__(self, incident_id: str) -> None:
+        super().__init__(404, "NOT_FOUND", "Incident not found")
 
 
 class IncidentRepository(Protocol):
-    """Adapter operations must complete atomically or roll back before raising.
+    """Writes commit atomically; results are detached API snapshots."""
 
-    Implement using Person 1's database session/models. Enforce unique public IDs
-    and the evidence foreign key in the database; never commit partial writes.
-    Returned schema objects must be detached snapshots, not mutable stored state.
-    """
-
-    def create_incident(self, incident: IncidentDetail) -> None: ...
+    def create_incident(self, data: IncidentCreate) -> IncidentDetail: ...
 
     def get_incident(self, incident_id: str) -> IncidentDetail | None: ...
 
-    def add_evidence(self, incident_id: str, evidence: EvidenceResponse) -> None:
-        """Atomically insert evidence; raise IncidentNotFoundError if parent is absent."""
-        ...
+    def add_evidence(self, incident_id: str, data: EvidenceCreate) -> EvidenceResponse: ...
 
 
-def utc_now() -> datetime:
-    return datetime.now(UTC)
+def evidence_snapshot(record: Evidence) -> EvidenceResponse:
+    return EvidenceResponse(
+        evidence_id=record.public_id,
+        category=record.category,
+        summary=record.summary,
+        source=record.source,
+        collected_at=record.collected_at,
+        recorded_at=record.recorded_at,
+    )
 
 
-def new_public_id(prefix: str) -> str:
-    """Provisional UUID format pending the shared public-ID decision."""
-    return f"{prefix}-{uuid4().hex}"
+def incident_snapshot(record: Incident) -> IncidentDetail:
+    return IncidentDetail(
+        incident_id=record.public_id,
+        title=record.title,
+        description=record.description,
+        discovered_at=record.discovered_at,
+        reporter_name=record.reporter_name,
+        status=IncidentStatus(record.status),
+        evidence=[evidence_snapshot(item) for item in record.evidence],
+    )
+
+
+class SQLAlchemyIncidentRepository:
+    """Uses Person 1's models, generated columns, and request-scoped session."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def create_incident(self, data: IncidentCreate) -> IncidentDetail:
+        record = Incident(**data.model_dump(by_alias=False), status="OPEN", evidence=[])
+        try:
+            self.session.add(record)
+            self.session.flush()
+            result = incident_snapshot(record)
+            self.session.commit()
+            return result
+        except Exception:
+            self.session.rollback()
+            raise
+
+    def get_incident(self, incident_id: str) -> IncidentDetail | None:
+        record = self.session.scalar(
+            select(Incident)
+            .where(Incident.public_id == incident_id)
+            .options(selectinload(Incident.evidence))
+        )
+        return incident_snapshot(record) if record is not None else None
+
+    def add_evidence(self, incident_id: str, data: EvidenceCreate) -> EvidenceResponse:
+        try:
+            # Hold a parent lock until commit: concurrent test reset cannot delete
+            # the parent between lookup and the evidence insert.
+            parent = self.session.scalar(
+                select(Incident).where(Incident.public_id == incident_id).with_for_update()
+            )
+            if parent is None:
+                raise IncidentNotFoundError(incident_id)
+            record = Evidence(incident_id=parent.id, **data.model_dump(by_alias=False))
+            self.session.add(record)
+            self.session.flush()
+            result = evidence_snapshot(record)
+            self.session.commit()
+            return result
+        except Exception:
+            self.session.rollback()
+            raise
 
 
 class IncidentService:
-    def __init__(
-        self,
-        repository: IncidentRepository,
-        *,
-        clock: Callable[[], datetime] = utc_now,
-        id_factory: Callable[[str], str] = new_public_id,
-    ) -> None:
+    def __init__(self, repository: IncidentRepository) -> None:
         self.repository = repository
-        self.clock = clock
-        self.id_factory = id_factory
 
     def create_incident(self, data: IncidentCreate) -> IncidentDetail:
-        incident = IncidentDetail(
-            incident_id=self.id_factory("INC"),
-            **data.model_dump(by_alias=False),
-        )
-        self.repository.create_incident(incident)
-        return incident
+        return self.repository.create_incident(data)
 
     def get_incident(self, incident_id: str) -> IncidentDetail:
         incident = self.repository.get_incident(incident_id)
@@ -70,14 +114,7 @@ class IncidentService:
         return incident
 
     def attach_evidence(self, incident_id: str, data: EvidenceCreate) -> EvidenceResponse:
-        self.get_incident(incident_id)
-        evidence = EvidenceResponse(
-            evidence_id=self.id_factory("EVD"),
-            recorded_at=self.clock(),
-            **data.model_dump(by_alias=False),
-        )
-        self.repository.add_evidence(incident_id, evidence)
-        return evidence
+        return self.repository.add_evidence(incident_id, data)
 
     def get_evidence(self, incident_id: str) -> list[EvidenceResponse]:
         return self.get_incident(incident_id).evidence

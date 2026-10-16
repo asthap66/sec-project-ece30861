@@ -1,14 +1,14 @@
-"""Append-only incident endpoints; mount only with authentication configured."""
+"""Append-only incident endpoints protected by the application's API-key middleware."""
 
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path
 
-from app.routes.feature_support import FeatureRoute, get_incident_service
+from app.routes.feature_support import get_incident_service
 from app.schemas import IncidentCreate, IncidentCreated, IncidentDetail
 from app.services.incidents import IncidentService
 
-router = APIRouter(route_class=FeatureRoute)
+router = APIRouter()
 Service = Annotated[IncidentService, Depends(get_incident_service)]
 
 
