@@ -32,9 +32,14 @@ The scaffold serves only FastAPI's generated docs (`/docs`, `/openapi.json`). It
 
 ```sh
 docker compose up -d db        # PostgreSQL only
-docker compose up --build      # app + PostgreSQL; the app waits for the DB health check
+uv run alembic upgrade head    # create/upgrade the tables
+docker compose up --build      # app + PostgreSQL; the app applies migrations, then starts
 docker compose down            # stop containers; keeps data
 ```
+
+If you already run PostgreSQL on your machine, port 5432 is taken and you'll
+reach that server instead of the container. Set `POSTGRES_PORT=5433` in `.env`
+and use port 5433 (host `127.0.0.1`) in `DATABASE_URL`.
 
 Database data lives in the named volume `pgdata` and survives `docker compose down`. **`docker compose down -v` (or `docker volume rm`) deletes the volume and all local database data.**
 
@@ -47,17 +52,36 @@ uv run mypy
 uv run pytest
 ```
 
-CI (`.github/workflows/ci.yml`) runs the same commands on pushes to `main` and on pull requests.
+Tests that need a database (`tests/infrastructure/test_database.py`) are
+skipped unless `TEST_DATABASE_URL` points at a **disposable** PostgreSQL: they
+reset it. For example, against the local container:
 
-## Current scaffold limitations
+```sh
+TEST_DATABASE_URL=postgresql+psycopg://incident_app:change-me-local-only@127.0.0.1:5432/incident_db uv run pytest tests/infrastructure
+```
 
-- No business endpoints. `/health`, `/reset`, `/incidents`, and evidence routes do not exist yet.
-- No authentication, database models, migrations, or DB connection code. The app does not connect to PostgreSQL yet.
-- No deployment.
-- The only test is a scaffold smoke test (the app imports and generates OpenAPI). It is not acceptance coverage.
-- The instructor-provided OpenAPI contract hasn't been added. See `docs/contract-issues.md`.
+Acceptance tests run against a running service:
 
-## Configuration variables (planned, not implemented)
+```sh
+BASE_URL=http://localhost:8000 API_KEY=replace-with-local-dev-key uv run pytest tests/acceptance
+```
 
-- `DATABASE_URL`, `API_KEY`: planned **server** configuration. The scaffold doesn't read them, and the app imports without them.
-- `BASE_URL`, `API_KEY`: planned **acceptance-runner** configuration (the target service and its key). No acceptance runner exists yet.
+CI (`.github/workflows/ci.yml`) runs on pushes to `main` and `integration`, and on pull requests. It does three things:
+
+- Runs the static checks.
+- Runs the non-acceptance tests against a disposable PostgreSQL service (`TEST_DATABASE_URL`), so the database tests run instead of skipping.
+- Migrates and starts the app locally, then runs `pytest -m acceptance` against it with a throwaway key.
+
+Runs against a deployed service are done separately and are never triggered from CI.
+
+## Current limitations
+
+- Implemented: `GET /health` (public), `POST /reset`, API-key authentication on every other path, the contract's error format, request logging, the Incident/Evidence models and first migration.
+- Not yet: the incident and evidence routes (Astha), and deployment over HTTPS.
+- Field length limits for `title`/`description` are placeholders in `app/config.py` until the pod agrees on numbers (`docs/contract-issues.md` #3).
+
+## Configuration
+
+- Server: `DATABASE_URL`, `API_KEY` (read on first use, so importing the app doesn't need them). `PORT` sets the listening port in the container (default 8000).
+- Acceptance runner: `BASE_URL`, `API_KEY` (the target service and its key).
+- Local tests: `TEST_DATABASE_URL` (a disposable database; see above).

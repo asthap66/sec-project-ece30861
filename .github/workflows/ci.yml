@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, integration]
   pull_request:
 
 permissions:
@@ -11,6 +11,27 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-latest
+
+    # Disposable database for the infrastructure DB tests and the in-CI app.
+    # Both reset it; it never holds real data.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://ci:ci-only@127.0.0.1:5432/ci
+
     steps:
       - uses: actions/checkout@v4
 
@@ -33,5 +54,27 @@ jobs:
       - name: mypy
         run: uv run mypy
 
-      - name: pytest
-        run: uv run pytest
+      - name: pytest (unit, infrastructure, client self-tests)
+        run: uv run pytest -m "not acceptance"
+
+      # Black-box acceptance tests against the app served locally in CI. Uses a
+      # throwaway key; deployed-service runs are done separately, not from CI.
+      - name: Start app for acceptance tests
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          API_KEY: ci-acceptance-key
+        run: |
+          uv run alembic upgrade head
+          nohup uv run uvicorn app.main:app --port 8000 > app.log 2>&1 &
+          for i in $(seq 30); do curl -sf http://127.0.0.1:8000/health && exit 0; sleep 1; done
+          cat app.log; exit 1
+
+      - name: pytest (acceptance, local app)
+        env:
+          BASE_URL: http://127.0.0.1:8000
+          API_KEY: ci-acceptance-key
+        run: uv run pytest -m acceptance
+
+      - name: App log
+        if: always()
+        run: cat app.log || true
