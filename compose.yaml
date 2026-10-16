@@ -1,0 +1,35 @@
+# Local development stack: the scaffold app plus PostgreSQL.
+# Values default to the placeholders in .env.example; override them in .env.
+# WARNING: `docker compose down -v` deletes the pgdata volume and all local DB data.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-incident_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+      POSTGRES_DB: ${POSTGRES_DB:-incident_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      # Planned configuration; the scaffold does not read these yet.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-incident_app}:${POSTGRES_PASSWORD:-change-me-local-only}@db:5432/${POSTGRES_DB:-incident_db}
+      API_KEY: ${API_KEY:-replace-with-local-dev-key}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

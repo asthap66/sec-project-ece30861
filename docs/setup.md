@@ -1,0 +1,63 @@
+# Local setup
+
+## Package management
+
+The project uses [uv](https://docs.astral.sh/uv/). Dependencies are declared in `pyproject.toml`: runtime dependencies under `[project]`, development tools under `[dependency-groups].dev`. Exact resolved versions are pinned in `uv.lock`, which is committed. CI installs with `uv sync --locked`, so it fails if the lock is out of date.
+
+To add a dependency, run `uv add <pkg>` (or `uv add --dev <pkg>`) and commit both `pyproject.toml` and `uv.lock`. Srihari coordinates dependency changes.
+
+## Environment setup
+
+Prerequisites: Python 3.12, uv, and Docker (only needed for PostgreSQL and the container).
+
+```sh
+cp .env.example .env   # local placeholders only; .env is git-ignored
+```
+
+## Install dependencies
+
+```sh
+uv sync                # creates .venv with Python 3.12, plus runtime and dev dependencies
+```
+
+## Run the app
+
+```sh
+uv run uvicorn app.main:app --reload
+```
+
+The scaffold serves only FastAPI's generated docs (`/docs`, `/openapi.json`). It has no business endpoints yet.
+
+## Start local PostgreSQL
+
+```sh
+docker compose up -d db        # PostgreSQL only
+docker compose up --build      # app + PostgreSQL; the app waits for the DB health check
+docker compose down            # stop containers; keeps data
+```
+
+Database data lives in the named volume `pgdata` and survives `docker compose down`. **`docker compose down -v` (or `docker volume rm`) deletes the volume and all local database data.**
+
+## Tests and static checks
+
+```sh
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy
+uv run pytest
+```
+
+CI (`.github/workflows/ci.yml`) runs the same commands on pushes to `main` and on pull requests.
+
+## Current scaffold limitations
+
+- No business endpoints. `/health`, `/reset`, `/incidents`, and evidence routes do not exist yet.
+- No authentication, database models, migrations, or DB connection code. The app does not connect to PostgreSQL yet.
+- No deployment.
+- The only test is a scaffold smoke test (the app imports and generates OpenAPI). It is not acceptance coverage.
+- The instructor-provided OpenAPI contract hasn't been added. See `docs/contract-issues.md`.
+
+## Configuration variables (planned, not implemented)
+
+- `DATABASE_URL`, `API_KEY`: planned **server** configuration. The scaffold doesn't read them, and the app imports without them.
+- `BASE_URL`, `API_KEY`: planned **acceptance-runner** configuration (the target service and its key). No acceptance runner exists yet.
