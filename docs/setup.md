@@ -66,7 +66,13 @@ Acceptance tests run against a running service:
 BASE_URL=http://localhost:8000 API_KEY=replace-with-local-dev-key uv run pytest tests/acceptance
 ```
 
-CI (`.github/workflows/ci.yml`) runs the same commands on pushes to `main` and on pull requests.
+CI (`.github/workflows/ci.yml`) runs on pushes to `main` and `integration`, and on pull requests. It does three things:
+
+- Runs the static checks.
+- Runs the non-acceptance tests against a disposable PostgreSQL service (`TEST_DATABASE_URL`), so the database tests run instead of skipping.
+- Migrates and starts the app locally, then runs `pytest -m acceptance` against it with a throwaway key.
+
+Runs against a deployed service are done separately and are never triggered from CI.
 
 ## Current limitations
 
