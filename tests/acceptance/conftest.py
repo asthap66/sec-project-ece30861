@@ -35,9 +35,14 @@ def require_api_key(acceptance_config: AcceptanceConfig) -> None:
 
 
 @pytest.fixture
-def reset_service(api: ApiClient, require_api_key: None) -> None:
-    """Clear the target's data. Destructive: opt-in only."""
+def allow_destructive() -> None:
+    """Skip unless the runner opted in to tests that can wipe the target's data."""
     if os.environ.get("ALLOW_DESTRUCTIVE_TESTS") != "1":
-        pytest.skip("destructive test; set ALLOW_DESTRUCTIVE_TESTS=1 to run POST /reset")
+        pytest.skip("destructive test; set ALLOW_DESTRUCTIVE_TESTS=1 to run it")
+
+
+@pytest.fixture
+def reset_service(api: ApiClient, require_api_key: None, allow_destructive: None) -> None:
+    """Clear the target's data. Destructive: opt-in only."""
     response = api.post("/reset")
     assert response.is_success, f"POST /reset failed: {response.status_code} {response.text}"
