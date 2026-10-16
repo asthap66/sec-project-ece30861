@@ -47,6 +47,16 @@ uv run mypy
 uv run pytest
 ```
 
+### Acceptance tests (live service)
+
+Tests marked `acceptance` (in `tests/acceptance/`) run against a live service and skip when `BASE_URL` is unset. That is why CI reports them as skipped.
+
+```sh
+BASE_URL=http://localhost:8000 API_KEY=<key> uv run pytest -m acceptance
+```
+
+Tests that call `POST /reset` also require `ALLOW_DESTRUCTIVE_TESTS=1`. Only set that against the agreed synthetic test service, and serialize runs with the other team.
+
 CI (`.github/workflows/ci.yml`) runs the same commands on pushes to `main` and on pull requests.
 
 ## Current scaffold limitations
@@ -54,10 +64,11 @@ CI (`.github/workflows/ci.yml`) runs the same commands on pushes to `main` and o
 - No business endpoints. `/health`, `/reset`, `/incidents`, and evidence routes do not exist yet.
 - No authentication, database models, migrations, or DB connection code. The app does not connect to PostgreSQL yet.
 - No deployment.
-- The only test is a scaffold smoke test (the app imports and generates OpenAPI). It is not acceptance coverage.
+- Tests that run in CI: the scaffold smoke test and the acceptance-client self-tests. Neither is acceptance coverage.
 - The instructor-provided OpenAPI contract hasn't been added. See `docs/contract-issues.md`.
 
 ## Configuration variables (planned, not implemented)
 
 - `DATABASE_URL`, `API_KEY`: planned **server** configuration. The scaffold doesn't read them, and the app imports without them.
-- `BASE_URL`, `API_KEY`: planned **acceptance-runner** configuration (the target service and its key). No acceptance runner exists yet.
+- `BASE_URL`, `API_KEY`: **acceptance-runner** configuration (the target service and its key), read by `tests/acceptance/client.py`. The server-side behavior these tests check isn't implemented yet.
+- `ALLOW_DESTRUCTIVE_TESTS=1`: opt-in for acceptance tests that reset the target's data.
