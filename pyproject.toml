@@ -49,5 +49,5 @@ select = ["E", "F", "W", "I", "B", "UP", "N", "S", "SIM"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["app", "tests"]
+files = ["app", "tests", "scripts"]
 plugins = ["pydantic.mypy"]
