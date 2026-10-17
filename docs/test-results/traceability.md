@@ -11,9 +11,9 @@ Owner: Mohit. Feeds submission Q4. Status reflects code in the repo, not deploye
 | AC-14 | Public health endpoint | `test_ac14_security.py::test_health_is_public` | Passes against the app run locally and in CI; not yet run against a deployment |
 | AC-14 | Missing / wrong / valid API key | `test_ac14_security.py::test_authenticated_route_*` | Passes against the app run locally and in CI; assumes auth before 404 (issue #4) |
 | AC-14 | HTTPS deployment | `test_ac14_security.py::test_deployment_uses_https` | Written; skips for local targets |
-| AC-16 | Reset | `test_system_endpoints.py::test_reset_*` (destructive, opt-in); Srihari's `tests/infrastructure/test_database.py` covers reset in-process | Passes against the app run locally and in CI. "No incidents remain" needs issue #2 |
+| AC-16 | Reset | `test_system_endpoints.py::test_reset_*` (destructive, opt-in); `scripts.check_persistence reset` (each created ID returns 404 afterwards); Srihari's `tests/infrastructure/test_database.py` | Passes locally ([2026-10-16 run](2026-10-16-local-ac16.md)) and in CI. "No incidents remain" is checked per ID until issue #2 is settled |
 | AC-14 | Errors use `{error, message}` | `test_system_endpoints.py::test_401_uses_error_format` | Passes against the app run locally and in CI |
-| AC-16 | Restart persistence | — | Not started; coordinate with Srihari |
-| AC-16 | Response time (100 incidents, 200 requests) | — | Not started; needs a create payload |
+| AC-16 | Restart persistence | `scripts.check_persistence create` / restart / `verify` | 100/100 intact after an app restart and after a full stack restart, run locally ([2026-10-16](2026-10-16-local-ac16.md)). In CI after an app restart. Deployment run pending |
+| AC-16 | Response time (100 incidents, 200 requests) | `scripts.performance` | 100% within 1 s, run locally ([2026-10-16](2026-10-16-local-ac16.md)). Smoke run in CI. Deployment run pending |
 
 Before any service existed, the AC-14 tests were checked two ways. Against a throwaway local stub with `/health` and key checking, they passed (HTTPS check skipped). Against the current scaffold, which has no routes, they failed as expected. Neither run is a result for the real service.

@@ -77,6 +77,29 @@ jobs:
           ALLOW_DESTRUCTIVE_TESTS: "1"
         run: uv run pytest -m acceptance
 
+      # AC-16 smoke run against the in-job app: restart persistence, reset, and
+      # response time. Real results come from runs against the deployment.
+      - name: AC-16 persistence across an app restart
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          BASE_URL: http://127.0.0.1:8000
+          API_KEY: ci-acceptance-key
+          ALLOW_DESTRUCTIVE_TESTS: "1"
+        run: |
+          uv run python -m scripts.check_persistence create --state ci-run.json
+          pkill -f "uvicorn app.main:app"
+          sleep 1
+          nohup uv run uvicorn app.main:app --port 8000 >> app.log 2>&1 &
+          for i in $(seq 30); do curl -sf "$BASE_URL/health" >/dev/null && break; sleep 1; done
+          uv run python -m scripts.check_persistence verify --state ci-run.json
+          uv run python -m scripts.check_persistence reset --state ci-run.json
+
+      - name: AC-16 response time
+        env:
+          BASE_URL: http://127.0.0.1:8000
+          API_KEY: ci-acceptance-key
+        run: uv run python -m scripts.performance
+
       - name: App log
         if: always()
         run: cat app.log || true
