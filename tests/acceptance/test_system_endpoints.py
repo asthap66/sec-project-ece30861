@@ -4,21 +4,13 @@ Covers REQ-14 reset (AC-16, reset part), AC-03's GET half, and AC-14's error
 bodies. Reset tests are destructive and only run with ALLOW_DESTRUCTIVE_TESTS=1.
 """
 
-import httpx
 import pytest
 
+from tests.acceptance.assertions import assert_error_body
 from tests.acceptance.client import ApiClient, Auth
 from tests.fixtures.data import unknown_incident_ids
 
 pytestmark = pytest.mark.acceptance
-
-
-def assert_error_body(response: httpx.Response, status: int) -> None:
-    """Contract: every error is {"error": "ERROR_CODE", "message": "..."}."""
-    assert response.status_code == status, response.text
-    body = response.json()
-    assert isinstance(body.get("error"), str) and body["error"]
-    assert isinstance(body.get("message"), str) and body["message"]
 
 
 def test_health_body_has_status(api: ApiClient) -> None:
