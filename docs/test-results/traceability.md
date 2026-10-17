@@ -4,10 +4,10 @@ Owner: Mohit. Feeds submission Q4. Status reflects code in the repo, not deploye
 
 | Criterion | Planned coverage (README §5) | Tests | Status |
 | --- | --- | --- | --- |
-| AC-01 – AC-04 | Incident create/retrieve workflow, including success, failure, and boundary cases | Fixtures: `tests/fixtures/data/incidents_*.json`, `evidence_valid.json` | Test data ready; tests wait on Astha's routes. Length boundaries wait on issue #3 |
+| AC-01 – AC-04 | Incident create/retrieve workflow, including success, failure, and boundary cases | Fixtures: `tests/fixtures/data/incidents_*.json`, `evidence_valid.json` and `test_ac01_05_incidents_evidence.py` | Written. All pass against integration merged with Astha's PR #4, run locally. Length boundaries wait on issue #3. AC-02's count check waits on issue #2 |
 | AC-02 | Includes listing incidents | — | Blocked: `GET /incidents` existence (issue #2) |
-| AC-03 (GET half) | Unknown incident ID returns 404 with error code and message | `test_system_endpoints.py::test_unknown_incident_get_is_404_with_error_format` | Passes against the app run locally and in CI. The POST half waits on the evidence route |
-| AC-05 | Evidence attachment, where the increment supports it | Fixtures: `tests/fixtures/data/evidence_*.json` | Test data ready; tests wait on Astha's routes |
+| AC-03 (GET half) | Unknown incident ID returns 404 with error code and message | `test_system_endpoints.py::test_unknown_incident_get_is_404_with_error_format` | GET half passes against the app run locally and in CI. POST half is in `test_ac01_05_incidents_evidence.py` |
+| AC-05 | Evidence attachment, where the increment supports it | Fixtures: `tests/fixtures/data/evidence_*.json` and `test_ac01_05_incidents_evidence.py` | Written. All pass against integration merged with Astha's PR #4, run locally |
 | AC-14 | Public health endpoint | `test_ac14_security.py::test_health_is_public` | Passes against the app run locally and in CI; not yet run against a deployment |
 | AC-14 | Missing / wrong / valid API key | `test_ac14_security.py::test_authenticated_route_*` | Passes against the app run locally and in CI; assumes auth before 404 (issue #4) |
 | AC-14 | HTTPS deployment | `test_ac14_security.py::test_deployment_uses_https` | Written; skips for local targets |
