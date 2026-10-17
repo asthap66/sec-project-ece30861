@@ -81,14 +81,19 @@ def validation_error(errors: Sequence[Any]) -> JSONResponse:
     """400 naming the first bad field."""
     first = errors[0] if errors else {}
     field = _field_name(first.get("loc", ()))
-    reason = str(first.get("msg", "invalid value"))
-    if first.get("type") == "missing":
-        reason = "is required"
-    elif first.get("type") == "json_invalid":
+    # pydantic prefixes messages from custom validators ("Value error, ...");
+    # that's an internal detail, so drop it
+    reason = re.sub(
+        r"^(Value error|Assertion failed), ", "", str(first.get("msg", "invalid value"))
+    )
+    if first.get("type") == "json_invalid":
         return error_response(400, "INVALID_BODY", "request body must be valid JSON")
     if field is None:
         return error_response(400, "INVALID_BODY", f"request body is invalid: {reason}")
-    return error_response(400, f"INVALID_{_upper_snake(field)}", f"{field} {reason}")
+    code = f"INVALID_{_upper_snake(field)}"
+    if first.get("type") == "missing":
+        return error_response(400, code, f"{field} is required")
+    return error_response(400, code, f"{field}: {reason}")
 
 
 async def _handle_api_error(request: Request, exc: Exception) -> JSONResponse:

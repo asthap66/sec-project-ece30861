@@ -61,7 +61,7 @@ def test_bad_value_is_400_naming_the_field(sample_client: TestClient) -> None:
     assert response.status_code == 400
     body = response.json()
     assert body["error"] == "INVALID_TITLE"
-    assert body["message"].startswith("title ")
+    assert body["message"].startswith("title: ")
 
 
 def test_malformed_json_is_400(sample_client: TestClient) -> None:
@@ -102,3 +102,27 @@ def test_unexpected_errors_hide_internals(app: FastAPI) -> None:
     assert response.status_code == 500
     assert response.json() == {"error": "INTERNAL_ERROR", "message": "an unexpected error occurred"}
     assert "secret" not in response.text
+
+
+def test_custom_validator_message_has_no_pydantic_prefix(app: FastAPI) -> None:
+    """A ValueError from a validator reads "field: reason", not "Value error, ..."."""
+    from pydantic import field_validator
+
+    class NotFuture(BaseModel):
+        when: datetime
+
+        @field_validator("when")
+        @classmethod
+        def not_future(cls, value: datetime) -> datetime:
+            raise ValueError("must not be in the future")
+
+    @app.post("/when")
+    def when(body: NotFuture) -> None:
+        return None
+
+    with TestClient(app) as client:
+        response = client.post("/when", json={"when": "2099-01-01T00:00:00Z"}, headers=KEY)
+    assert response.json() == {
+        "error": "INVALID_WHEN",
+        "message": "when: must not be in the future",
+    }
