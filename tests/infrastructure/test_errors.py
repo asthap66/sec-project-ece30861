@@ -79,7 +79,7 @@ def test_api_error_from_a_route(sample_client: TestClient) -> None:
 
 
 def test_unknown_path_is_404_in_contract_format(client: TestClient) -> None:
-    response = client.get("/incidents/INC-999", headers=KEY)
+    response = client.get("/no/such/path", headers=KEY)
     assert response.status_code == 404
     assert_error_format(response.json())
 
