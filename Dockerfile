@@ -25,6 +25,10 @@ RUN uv sync --frozen --no-dev
 RUN useradd --create-home --uid 10001 appuser
 USER appuser
 
+# Which commit this image was built from (docker build --build-arg GIT_COMMIT=$(git rev-parse --short HEAD) .)
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+
 EXPOSE 8000
 # Applies pending migrations, then starts the API (see scripts/start.sh).
 CMD ["sh", "scripts/start.sh"]
