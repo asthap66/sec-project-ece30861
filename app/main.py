@@ -7,6 +7,7 @@ incident/evidence routers.
 """
 
 import logging
+import os
 import re
 import time
 import uuid
@@ -19,6 +20,11 @@ from app.errors import register_error_handlers
 from app.routes import evidence, incidents, system
 
 logger = logging.getLogger("app.requests")
+
+# The git commit this build came from, set at image build time (Dockerfile
+# GIT_COMMIT build arg). Sent on every response as X-App-Commit so anyone can
+# check which version is deployed (submission Q2, commit mapping).
+APP_COMMIT = os.environ.get("GIT_COMMIT", "unknown")
 
 # IDs that appear in paths (INC-001, EVD-001, ...), logged so a request can be
 # traced to the record it touched without logging any of the record's content.
@@ -49,6 +55,7 @@ class RequestLogMiddleware:
                 status = message["status"]
                 headers = list(message.get("headers", []))
                 headers.append((b"x-request-id", request_id.encode()))
+                headers.append((b"x-app-commit", APP_COMMIT.encode()))
                 message["headers"] = headers
             await send(message)
 

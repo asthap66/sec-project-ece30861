@@ -92,3 +92,11 @@ def test_require_api_key_dependency(settings_env: None) -> None:
         assert client.get("/guarded").status_code == 401
         assert client.get("/guarded").json() == UNAUTHORIZED
         assert client.get("/guarded", headers={"X-API-Key": TEST_KEY}).json() == {"ok": "yes"}
+
+
+def test_responses_carry_request_id_and_commit(client: TestClient) -> None:
+    """Q2: every response says which build served it; no secrets in headers."""
+    response = client.get("/health")
+    assert response.headers["x-request-id"]
+    assert "x-app-commit" in response.headers
+    assert TEST_KEY not in str(response.headers)
