@@ -2,9 +2,8 @@
 
 Owner: Srihari (infrastructure).
 
-Registers the middleware, error handlers and routers. Feature routers
-(incidents, evidence) are added here as they are implemented against the
-agreed contract.
+Registers shared middleware and error handlers plus health/reset and Phase 3
+incident/evidence routers.
 """
 
 import logging
@@ -17,7 +16,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.auth import ApiKeyMiddleware
 from app.errors import register_error_handlers
-from app.routes import system
+from app.routes import evidence, incidents, system
 
 logger = logging.getLogger("app.requests")
 
@@ -75,6 +74,8 @@ def create_app() -> FastAPI:
     )
     register_error_handlers(application)
     application.include_router(system.router)
+    application.include_router(incidents.router)
+    application.include_router(evidence.router)
     # Middleware runs outermost-last-added: logging wraps auth, so rejected
     # requests (401) are logged too.
     application.add_middleware(ApiKeyMiddleware)

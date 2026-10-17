@@ -5,9 +5,21 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from app.auth import require_api_key
+from app.routes.feature_support import get_incident_service
+from app.services.incidents import IncidentNotFoundError, IncidentService
 from tests.infrastructure.conftest import TEST_KEY
 
 UNAUTHORIZED = {"error": "UNAUTHORIZED", "message": "missing or invalid API key"}
+
+
+@pytest.fixture
+def missing_incident(app: FastAPI) -> None:
+    """Auth-only tests must not connect to the dummy database URL."""
+    from unittest.mock import Mock
+
+    service = Mock(spec=IncidentService)
+    service.get_incident.side_effect = IncidentNotFoundError("INC-404")
+    app.dependency_overrides[get_incident_service] = lambda: service
 
 
 def test_health_needs_no_key(client: TestClient) -> None:
@@ -25,7 +37,7 @@ def test_bad_key_is_401_in_contract_format(client: TestClient, headers: dict[str
     assert response.json() == UNAUTHORIZED
 
 
-def test_header_name_is_case_insensitive(client: TestClient) -> None:
+def test_header_name_is_case_insensitive(client: TestClient, missing_incident: None) -> None:
     """HTTP header names are case-insensitive, so x-api-key works too."""
     response = client.get("/incidents/INC-404", headers={"x-api-key": TEST_KEY})
     assert response.status_code != 401
@@ -47,7 +59,7 @@ def test_key_is_checked_before_routing(client: TestClient, method: str, path: st
     assert response.json()["error"] == "UNAUTHORIZED"
 
 
-def test_valid_key_reaches_the_app(client: TestClient) -> None:
+def test_valid_key_reaches_the_app(client: TestClient, missing_incident: None) -> None:
     response = client.get("/incidents/INC-999", headers={"X-API-Key": TEST_KEY})
     assert response.status_code == 404
 
