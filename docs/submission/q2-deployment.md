@@ -35,8 +35,11 @@ with `scripts/deploy_gcp.sh`.
 curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i x-app-commit
 ```
 
-- **Deployed commit:** `f2b607c` (`integration` branch: infra + incident/evidence
-  API + acceptance tests). Checked with the header above.
+- **Deployed commit:** `ed5f449` (`integration` branch), deployed 2026-10-18
+  and checked with the header above; 48 acceptance tests passed against it.
+  The persistence and performance runs below were against the previous
+  deployment, `f2b607c`, which had the same API (the only change since is the
+  /docs Authorize button).
 
 ## Secrets
 
