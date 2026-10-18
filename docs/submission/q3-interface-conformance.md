@@ -4,7 +4,7 @@ Lead: Srihari. Feature details: Astha. Test results: Mohit.
 
 Status of every operation in the pod's common contract (Phase 2 - Pod.pdf,
 Q5.1–Q5.3) in the code on the `integration` branch, as of 2026-10-17
-(local run: 167 unit/infrastructure tests and 47 acceptance tests passed, HTTPS check skipped locally). "Yes" means implemented
+(local run: 168 unit/infrastructure tests and 47 acceptance tests passed; against the deployment on 2026-10-18: 48 acceptance tests passed, none skipped). "Yes" means implemented
 and covered by a test that passes; it is not a claim about the deployed service
 until the deployed run is recorded in `docs/test-results/`.
 
@@ -40,9 +40,9 @@ Record real observations only (README §9).
 | Wrong-state operations → 409 (REQ-08) | **No**, Phase 4 (no state-changing operations yet) | — |
 | Requests RFC 3339 with offset; responses in UTC (REQ-14) | **Yes** | `discoveredAt: 2026-09-21T14:30:00-04:00` comes back as `2026-09-21T18:30:00Z`; `tests/unit/test_schemas.py`, `test_database.py::test_timestamps_keep_the_instant_and_are_timezone_aware` |
 | IDs `INC-001` / `EVD-001` | **Yes** (database-generated) | `test_database.py::test_ids_have_the_contract_format` |
-| Data kept across restarts until reset (REQ-15) | **Yes** locally | Restart check, 2026-10-16: `INC-001` present after `docker compose restart app`, gone after reset. Deployed check pending |
-| 95% of requests within 1 s at 100 incidents (REQ-15) | **Not measured** | Mohit's performance script (needs the create route) |
-| Deployed over HTTPS (REQ-13) | **No**: not deployed yet | AC-14 `test_deployment_uses_https` skips for local targets |
+| Data kept across restarts until reset (REQ-15) | **Yes**, deployed | 2026-10-18: 100/100 incidents intact after a Cloud Run restart (new revision), 0 after reset (`scripts/check_persistence.py`) |
+| 95% of requests within 1 s at 100 incidents (REQ-15) | **Yes**, deployed | 2026-10-18: 200/200 within 1 s; p50 48 ms, p95 61 ms (`scripts/performance.py`) |
+| Deployed over HTTPS (REQ-13) | **Yes** | https://incident-api-356019173418.us-central1.run.app; AC-14 `test_deployment_uses_https` passes; `http://` redirects to `https://` |
 
 ## Our choices where the contract is silent
 
