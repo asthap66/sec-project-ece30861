@@ -12,11 +12,13 @@ import os
 import re
 import time
 import uuid
+from typing import Any
 
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.auth import ApiKeyMiddleware
+from app.auth import API_KEY_HEADER, ApiKeyMiddleware
 from app.errors import register_error_handlers
 from app.routes import system
 
@@ -75,6 +77,34 @@ class RequestLogMiddleware:
             )
 
 
+def _document_api_key(application: FastAPI) -> None:
+    """Declare the X-API-Key header in the OpenAPI document.
+
+    Documentation only: it gives the /docs page an "Authorize" button, so the
+    key can be entered once and every "Try it out" request sends it. The
+    actual check is ApiKeyMiddleware, which runs whether or not this exists.
+    /health is marked as needing no key, as in the contract.
+    """
+
+    def openapi() -> dict[str, Any]:
+        if application.openapi_schema is None:
+            schema = get_openapi(
+                title=application.title,
+                version=application.version,
+                routes=application.routes,
+            )
+            schema.setdefault("components", {})["securitySchemes"] = {
+                "ApiKey": {"type": "apiKey", "in": "header", "name": API_KEY_HEADER}
+            }
+            schema["security"] = [{"ApiKey": []}]
+            for method in schema.get("paths", {}).get("/health", {}).values():
+                method["security"] = []
+            application.openapi_schema = schema
+        return application.openapi_schema
+
+    application.openapi = openapi  # type: ignore[method-assign]
+
+
 def create_app() -> FastAPI:
     application = FastAPI(
         title="Cybersecurity Incident and Evidence Management API",
@@ -86,6 +116,7 @@ def create_app() -> FastAPI:
     # requests (401) are logged too.
     application.add_middleware(ApiKeyMiddleware)
     application.add_middleware(RequestLogMiddleware)
+    _document_api_key(application)
     return application
 
 
