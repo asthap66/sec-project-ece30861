@@ -11,7 +11,7 @@ Owner: Mohit. Both directions have to be attempted and recorded, including failu
 
 ## What we give them
 
-- Our deployed base URL and test key, once Srihari's deployment is up.
+- Our deployed base URL, https://incident-api-356019173418.us-central1.run.app, and the test key (private channel only; see `docs/submission/q2-deployment.md`).
 - The shared fixtures in `tests/fixtures/data/`, as plain JSON in the AC-01 format.
 - The commands below. Our suite only needs Python 3.12 and `uv`.
 
@@ -31,4 +31,4 @@ Record each run in this folder with the date, their commit or version if they sh
 | Direction | Status |
 | --- | --- |
 | Our tests → their service | Not started. Waiting on their URL and key |
-| Their tests → our service | Not started. Waiting on our deployment |
+| Their tests → our service | Ready on our side (deployed 2026-10-18, 48/48 of our own suite passing). Waiting for them to run |
