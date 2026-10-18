@@ -100,3 +100,21 @@ def test_responses_carry_request_id_and_commit(client: TestClient) -> None:
     assert response.headers["x-request-id"]
     assert "x-app-commit" in response.headers
     assert TEST_KEY not in str(response.headers)
+
+
+def test_docs_declare_the_api_key(client: TestClient) -> None:
+    """/docs gets an Authorize button for X-API-Key; /health is marked public."""
+    schema = client.get("/openapi.json").json()
+    assert schema["components"]["securitySchemes"]["ApiKey"] == {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+    }
+    assert schema["security"] == [{"ApiKey": []}]
+    assert schema["paths"]["/health"]["get"]["security"] == []
+
+
+def test_documenting_the_key_does_not_change_enforcement(client: TestClient) -> None:
+    """The docs change is documentation only; the middleware still decides."""
+    assert client.get("/docs").status_code == 200
+    assert client.post("/reset").status_code == 401
