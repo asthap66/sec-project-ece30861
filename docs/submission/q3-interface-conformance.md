@@ -5,8 +5,8 @@ Lead: Srihari. Feature details: Astha. Test results: Mohit.
 Status of every operation in the pod's common contract (Phase 2 - Pod.pdf,
 Q5.1–Q5.3) in the code on the `integration` branch, as of 2026-10-17
 (local run: 168 unit/infrastructure tests and 47 acceptance tests passed; against the deployment on 2026-10-18: 48 acceptance tests passed, none skipped). "Yes" means implemented
-and covered by a test that passes; it is not a claim about the deployed service
-until the deployed run is recorded in `docs/test-results/`.
+and covered by a test that passes; the deployed run is recorded in
+`docs/test-results/2026-10-18-deployed.md`.
 
 **Update this table as Astha's routes land and as deployed runs are recorded.**
 Record real observations only (README §9).
