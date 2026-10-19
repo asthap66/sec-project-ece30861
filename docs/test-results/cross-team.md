@@ -6,7 +6,7 @@ Owner: Mohit. Both directions have to be attempted and recorded, including failu
 
 - [x] Their deployed HTTPS base URL: https://incident-clock.onrender.com (tester: https://incident-clock-tester.onrender.com).
 - [x] A shared synthetic test API key, exchanged privately. Never put it in git, chat screenshots or the report.
-- [ ] An agreed time window for runs that call `POST /reset`, so neither team wipes the other mid-run.
+- [ ] A written schedule for runs that call `POST /reset` or `/test/setup`. None exists yet. The 2026-10-18 tester runs happened without one.
 - [ ] Their position on the open contract questions: `GET /incidents` (issue #2) and length limits (issue #3).
 
 ## What we give them
@@ -32,4 +32,4 @@ Record each run in this folder with the date, their commit or version if they sh
 | --- | --- |
 | Our tests → their service | Non-destructive run 2026-10-18: [45 passed, 0 failed, 3 reset tests skipped](2026-10-18-cross-team-ours-on-theirs.md). Reset tests and AC-16 wait for an agreed window |
 | Their tests → our service | **Pending.** Our system has `/test/setup` and `/test/report` (`f551649`). No report from their tester exists yet |
-| Our tester → their service | **Pending.** Their URL and key aren't in our tester's approved targets (Srihari's call) |
+| Our tester → their service | Done 2026-10-18 by Srihari: **48 pass, 0 fail, 0 skipped**; code 325/406 (their basis), system 8/16. See `docs/cross-team-testing.md` |

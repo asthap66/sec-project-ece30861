@@ -128,14 +128,15 @@ On the first `f2b607c` persistence attempt, one request hit the client's 10 s ti
 | Direction | Status | Result | Issues / owners |
 | --- | --- | --- | --- |
 | Our suite → their system (https://incident-clock.onrender.com) | Done 2026-10-18, about 20:25 EDT, by Mohit. Non-destructive (`ALLOW_DESTRUCTIVE_TESTS` unset), suite at `38972ff` | **45 passed, 0 failed, 3 skipped.** The skips are our 3 reset tests, left out because no reset window was agreed | None from the passing tests. Their health returns `"ok"` and ours `"OK"`; both meet `{status: string}`. Our run left synthetic incidents in their database |
-| Their tester → our system | **PENDING.** Our `/test/setup` and `/test/report` are live (`f551649`), and we sent our system and tester URLs. No report from them is in the repo or anywhere we've seen | No result yet | n/a |
-| Our tester → their system | **PENDING.** Our tester only targets approved URLs, and their URL and key haven't been added. Changing that is Srihari's call | No result yet | n/a |
+| Their tester → our system | **PENDING.** Our `/test/setup` and `/test/report` are live (`f551649`). They said on 2026-10-18 around 22:00 EDT that they were running it, but no report has reached us yet | No result yet | n/a |
+| Our tester → their system | Done 2026-10-18 by Srihari through our deployed tester (session `7c8dd57b-c179-48f1-8a92-465b4d8063be`). Their key is kept in our Secret Manager. This run included our 3 reset tests | **48 pass, 0 fail, 0 skipped.** Setup 201 in 0.8 s, run 200 in 9.9 s | None found |
 | Our tester → our system (self-check of the interface) | Done 2026-10-18 by Srihari | 48 pass; coverage as in Q4.5 | n/a |
 
 **Coverage available:**
 - **Our tester on our system:** code 135/522 lines; component null; system 8/16 ACs exercised.
-- **Our suite on their system:** it ran without the testing interface, so there's no code-coverage figure. It exercised AC-01 to AC-05, the REQ-07 half of AC-08, and AC-14.
-- **Their side:** **PENDING.**
+- **Our tester on their system:** code 325/406 lines (reported by their `/test/report`; their basis counts lines run at import, ours doesn't, so the two code numbers can't be compared); component null; system 8/16 ACs with at least one test run.
+- **Our earlier direct suite run on their system:** no code-coverage figure (it didn't use the testing interface). It exercised AC-01 to AC-05, the REQ-07 half of AC-08, and AC-14.
+- **Their tester on our system:** **PENDING.**
 
 ## Q6.2 Specification ambiguities
 
@@ -146,7 +147,7 @@ On the first `f2b607c` persistence attempt, one request hit the client's 10 s ti
 | Max lengths for title/description are left open (issue #3) | Their schema only requires non-empty strings; we reject title > 200 and description > 5000. Long valid input could pass on theirs and fail on ours | Proposed: agree on numbers with the other team. Ours are placeholders, and boundary tests wait until then |
 | Unknown extra fields aren't covered | One side might reject what the other accepts | We ignore them. Not yet raised with the other team |
 | Error code names: only `{error, message}` is required | Tests checking exact codes could fail across teams | Our tests check the shape, not the code. We share our code list (Q3) and propose comparing |
-| `/reset` and `/test/setup` clear all data on a shared deployment | One team's run can wipe the other's mid-test | Proposed: agree a time window before any destructive run. Nothing has been agreed yet, so none were run cross-team |
+| `/reset` and `/test/setup` clear all data on a shared deployment | One team's run can wipe the other's mid-test | No schedule was agreed. On 2026-10-18 Srihari ran our tester (resets included) against theirs, and they said they were running theirs against us. No clash has been reported. Proposed: a written schedule for Phase 4 |
 | The course testing interface sits outside the pod contract | Error format for `/test/*` differs (`{message, source}`); "session" meaning is up to each team | Both teams implemented it. Ours: one active session, setup resets the data, reusing an ID gives 409 (`docs/cross-team-testing.md`) |
 
 ---
@@ -158,14 +159,14 @@ On the first `f2b607c` persistence attempt, one request hit the client's 10 s ti
 - Evidence attachment with all four categories, recorded time, unknown incident giving 404 (REQ-03, AC-03, AC-04, AC-05). Edit and delete give 405 (REQ-07).
 - API-key auth on everything except `/health`, served over HTTPS (REQ-13, AC-14). `{error, message}` errors and `POST /reset` (REQ-14).
 - Data persists in Cloud SQL across restarts (REQ-15, AC-16 on `f2b607c`).
-- The course testing interface on our system, plus a deployed tester that runs our 48-test suite.
+- The course testing interface on our system, plus a deployed tester that runs our 48-test suite. It passed 48/48 against both our system and the other team's.
 - CI that runs static checks, 212 tests, the acceptance suite and an AC-16 smoke test on every push.
 
 **Incomplete:**
 - Phase 4 decision workflow and deadlines: REQ-04, REQ-05, REQ-08, REQ-09, REQ-10; AC-06, AC-07, AC-09, AC-10, AC-15. Not started.
 - Corrections, filing, timeline (REQ-06, REQ-11, REQ-12; AC-08 history half, AC-11 to AC-13). Planned for Phase 5.
 - AC-16 persistence and timing on the final deployment `f551649`. Not re-run.
-- Cross-team tester runs in both directions, and destructive cross-team runs (AC-16 and reset).
+- Their tester's run against our system (no report yet), and cross-team AC-16 (restart and timing) in both directions.
 - Pod decisions on the list route (issue #2) and length limits (issue #3).
 
 ## Q7.2 Known limitations
@@ -175,7 +176,7 @@ On the first `f2b607c` persistence attempt, one request hit the client's 10 s ti
 | L1 | AC-02 count check, AC-16 "no incidents remain" (no `GET /incidents`) | Medium | Per-ID 404 checks over HTTP, plus DB row-count tests in CI | Phase 4, after pod decision |
 | L2 | REQ-02 length limits (`POST /incidents`) | Medium | Placeholders 200/5000; tell the other team our limits | Phase 4, after pod decision |
 | L3 | AC-16 on final version `f551649` not measured | Medium | Results on `f2b607c` (same incident/evidence routes) and CI smoke runs on `f551649` | Before Phase 4 work starts |
-| L4 | Cross-team tester runs not done | High for Q6 grading | Our suite passed 45 against them (3 skipped); our interface is live for theirs | Phase 4 start |
+| L4 | Their tester's report against our system not received | High for Q6 grading | Our tester passed 48/48 against them; our interface is live for theirs | Before submission if possible |
 | L5 | `/test/report` coverage held in memory on one instance | Low | `max-instances 1`; restart clears coverage only, not data | Phase 4 |
 | L6 | `test_feature_database.py` line 44 compares the DB clock with the host clock | Low (tests only) | Passes in CI. Failed locally once with a measured 3 to 4 s host/container clock gap | Phase 4 (Astha adds a tolerance) |
 | L7 | No enforced merge or deploy gate | Medium | Team habit of merging and deploying only green commits | Phase 4 (needs branch protection, which this private repo plan doesn't offer, or a public repo) |
@@ -193,7 +194,7 @@ Our Phase 2 plan (Q6.2) set Phase 4 to deliver:
 That plan still holds. Phase 3 delivered what was planned (REQ-01 to REQ-03, REQ-13, and most of REQ-14/15), so Phase 4 can build on working storage, auth and deployment.
 
 **Added to Phase 4:**
-- The leftover Phase 3 items: AC-16 on the final version, cross-team tester runs, and the length-limit and list-route decisions.
+- The leftover Phase 3 items: AC-16 on the final version, the other team's report on our system, and the length-limit and list-route decisions.
 - Upkeep of the course testing interface, which wasn't in the Phase 2 plan.
 
 **Updated risks:**

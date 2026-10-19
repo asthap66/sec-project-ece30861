@@ -26,14 +26,15 @@ The incident and evidence routes are the same, but this isn't a docs-only differ
 | Direction | Status | Result | Issues / owners |
 | --- | --- | --- | --- |
 | Our suite → their system (https://incident-clock.onrender.com) | Done 2026-10-18, about 20:25 EDT, by Mohit. Non-destructive (`ALLOW_DESTRUCTIVE_TESTS` unset), suite at `38972ff` | **45 passed, 0 failed, 3 skipped.** The skips are our 3 reset tests, left out because no reset window was agreed | None from the passing tests. Their health returns `"ok"` and ours `"OK"`; both meet `{status: string}`. Our run left synthetic incidents in their database |
-| Their tester → our system | **PENDING.** Our `/test/setup` and `/test/report` are live (`f551649`), and we sent our system and tester URLs. No report from them is in the repo or anywhere we've seen | No result yet | n/a |
-| Our tester → their system | **PENDING.** Our tester only targets approved URLs, and their URL and key haven't been added. Changing that is Srihari's call | No result yet | n/a |
+| Their tester → our system | **PENDING.** Our `/test/setup` and `/test/report` are live (`f551649`). They said on 2026-10-18 around 22:00 EDT that they were running it, but no report has reached us yet | No result yet | n/a |
+| Our tester → their system | Done 2026-10-18 by Srihari through our deployed tester (session `7c8dd57b-c179-48f1-8a92-465b4d8063be`). Their key is kept in our Secret Manager. This run included our 3 reset tests | **48 pass, 0 fail, 0 skipped.** Setup 201 in 0.8 s, run 200 in 9.9 s | None found |
 | Our tester → our system (self-check of the interface) | Done 2026-10-18 by Srihari | 48 pass; coverage as in Q4.5 | n/a |
 
 **Coverage available:**
 - **Our tester on our system:** code 135/522 lines; component null; system 8/16 ACs exercised.
-- **Our suite on their system:** it ran without the testing interface, so there's no code-coverage figure. It exercised AC-01 to AC-05, the REQ-07 half of AC-08, and AC-14.
-- **Their side:** **PENDING.**
+- **Our tester on their system:** code 325/406 lines (reported by their `/test/report`; their basis counts lines run at import, ours doesn't, so the two code numbers can't be compared); component null; system 8/16 ACs with at least one test run.
+- **Our earlier direct suite run on their system:** no code-coverage figure (it didn't use the testing interface). It exercised AC-01 to AC-05, the REQ-07 half of AC-08, and AC-14.
+- **Their tester on our system:** **PENDING.**
 
 ## Q6.2 Specification ambiguities
 
@@ -44,5 +45,5 @@ The incident and evidence routes are the same, but this isn't a docs-only differ
 | Max lengths for title/description are left open (issue #3) | Their schema only requires non-empty strings; we reject title > 200 and description > 5000. Long valid input could pass on theirs and fail on ours | Proposed: agree on numbers with the other team. Ours are placeholders, and boundary tests wait until then |
 | Unknown extra fields aren't covered | One side might reject what the other accepts | We ignore them. Not yet raised with the other team |
 | Error code names: only `{error, message}` is required | Tests checking exact codes could fail across teams | Our tests check the shape, not the code. We share our code list (Q3) and propose comparing |
-| `/reset` and `/test/setup` clear all data on a shared deployment | One team's run can wipe the other's mid-test | Proposed: agree a time window before any destructive run. Nothing has been agreed yet, so none were run cross-team |
+| `/reset` and `/test/setup` clear all data on a shared deployment | One team's run can wipe the other's mid-test | No schedule was agreed. On 2026-10-18 Srihari ran our tester (resets included) against theirs, and they said they were running theirs against us. No clash has been reported. Proposed: a written schedule for Phase 4 |
 | The course testing interface sits outside the pod contract | Error format for `/test/*` differs (`{message, source}`); "session" meaning is up to each team | Both teams implemented it. Ours: one active session, setup resets the data, reusing an ID gives 409 (`docs/cross-team-testing.md`) |
