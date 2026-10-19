@@ -14,8 +14,8 @@ Lead: Mohit. Working checklist: `docs/test-results/cross-team.md`.
 
 | Direction | Status |
 | --- | --- |
-| Our tests → their service | Not run. Waiting on their URL and key |
-| Their tests → our service | Not run. Our side is ready |
+| Our tests → their service | 2026-10-18, non-destructive: **45 passed, 0 failed**, 3 reset tests skipped on purpose ([details](../test-results/2026-10-18-cross-team-ours-on-theirs.md)). Reset tests and AC-16 wait for an agreed window |
+| Their tests → our service | Not run yet. URL and key sent 2026-10-18 |
 
 ## Open with the other team
 

@@ -4,8 +4,8 @@ Owner: Mohit. Both directions have to be attempted and recorded, including failu
 
 ## What we need from the other team
 
-- [ ] Their deployed HTTPS base URL.
-- [ ] A shared synthetic test API key, exchanged privately. Never put it in git, chat screenshots or the report.
+- [x] Their deployed HTTPS base URL: https://incident-clock.onrender.com (tester: https://incident-clock-tester.onrender.com).
+- [x] A shared synthetic test API key, exchanged privately. Never put it in git, chat screenshots or the report.
 - [ ] An agreed time window for runs that call `POST /reset`, so neither team wipes the other mid-run.
 - [ ] Their position on the open contract questions: `GET /incidents` (issue #2) and length limits (issue #3).
 
@@ -30,5 +30,5 @@ Record each run in this folder with the date, their commit or version if they sh
 
 | Direction | Status |
 | --- | --- |
-| Our tests → their service | Not started. Waiting on their URL and key |
+| Our tests → their service | Non-destructive run 2026-10-18: [45 passed, 0 failed, 3 reset tests skipped](2026-10-18-cross-team-ours-on-theirs.md). Reset tests and AC-16 wait for an agreed window |
 | Their tests → our service | Ready on our side (deployed 2026-10-18, 48/48 of our own suite passing). Waiting for them to run |
