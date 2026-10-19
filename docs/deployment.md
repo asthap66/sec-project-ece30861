@@ -7,9 +7,10 @@ Owner: Srihari (infrastructure).
 | Base URL | https://incident-api-356019173418.us-central1.run.app |
 | Project | `ece30861-project-62ca4b` (Google Cloud, its own billing account; $50 budget alert) |
 | Region | `us-central1` |
-| App | Cloud Run service `incident-api`: 1 vCPU, 512 MiB, min 1 / max 2 instances |
+| App | Cloud Run service `incident-api`: 1 vCPU, 512 MiB, min 1 / max 1 instances (test sessions need a single instance) |
 | Database | Cloud SQL `incident-db`: PostgreSQL 16, `db-f1-micro`, 10 GB SSD, database `incident_db`, user `incident_app` |
 | Secrets | Secret Manager: `api-key` (the shared X-API-Key), `database-url` |
+| Tester | Cloud Run service `incident-tester`: https://incident-tester-356019173418.us-central1.run.app, deployed with `scripts/deploy_tester_gcp.sh`; see `docs/cross-team-testing.md` |
 | Images | Artifact Registry `us-central1-docker.pkg.dev/ece30861-project-62ca4b/incident-api/api:<commit>` |
 
 HTTPS is provided by Cloud Run; plain `http://` redirects to `https://`. One

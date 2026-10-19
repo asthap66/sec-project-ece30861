@@ -25,6 +25,8 @@ Record real observations only (README §9).
 | `GET /incidents/{incidentId}/deadline-status` | `NOT_APPLICABLE` / `PENDING` / `OVERDUE`, optional `as_of` | 4 | **No**, planned for Phase 4 | — |
 | `POST /incidents/{incidentId}/filing` | Record 8-K filing, `ON_TIME`/`LATE` | 4 | **No**, planned for Phase 4 | — |
 | `GET /incidents/{incidentId}/timeline` | Events and evidence counts | 4/5 | **No**, planned | — |
+| `POST /test/setup` (course testing interface) | API key; `201 {session_id}`; resets to empty baseline; 409 on reused ID | 3 | **Yes** | `tests/infrastructure/test_test_interface.py`; live tester run 2026-10-18 (`docs/cross-team-testing.md`) |
+| `GET /test/report` (course testing interface) | API key; code coverage for the session; 404 unknown | 3 | **Yes** | `tests/infrastructure/test_test_interface.py`; live tester run 2026-10-18 |
 | `GET /incidents` (proposed, not in contract) | List incidents (needed by AC-02, AC-16) | — | **Not in contract**; currently returns 405 (only POST exists on `/incidents`). Proposal pending pod agreement | `docs/contract-issues.md` #2 |
 
 ## Cross-cutting rules

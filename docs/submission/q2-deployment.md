@@ -35,8 +35,11 @@ with `scripts/deploy_gcp.sh`.
 curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i x-app-commit
 ```
 
-- **Deployed commit:** `ed5f449` (`integration` branch), deployed 2026-10-18
-  and checked with the header above; 48 acceptance tests passed against it.
+- **Deployed commit:** `f551649` (`integration` branch), deployed 2026-10-18
+  and checked with the header above. It adds the course testing interface
+  (`/test/setup`, `/test/report`); our tester ran all 48 acceptance tests
+  against it, all passing (`docs/cross-team-testing.md`). The previous
+  deployment, `ed5f449`, also passed 48 acceptance tests.
   The persistence and performance runs below were against the previous
   deployment, `f2b607c`, which had the same API (the only change since is the
   /docs Authorize button).
@@ -106,8 +109,9 @@ evidence, get it, and a delete attempt (405).
 
 ## Registry and documentation
 
-- **Class registry entry:** TODO (submit the base URL above and the test-runner
-  location below).
+- **Class registry entry:** system base URL above; tester
+  https://incident-tester-356019173418.us-central1.run.app (values in
+  `docs/cross-team-testing.md`). TODO: confirm submitted.
 - **Test runner:** `tests/acceptance/` (Mohit). Run with
   `BASE_URL=<url> API_KEY=<key> uv run pytest -m acceptance`.
 - **Docs:** `docs/deployment.md` (operating the deployment), `docs/setup.md`
