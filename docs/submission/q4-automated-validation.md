@@ -7,25 +7,26 @@ Lead: Mohit. Detailed results: `docs/test-results/`. Requirement mapping: `docs/
 | Layer | Location | Count | Needs |
 | --- | --- | --- | --- |
 | Unit tests (schemas, routes, repository) | `tests/unit/` | 81 | Nothing |
-| Infrastructure tests (auth, errors, logging, database, migrations) | `tests/infrastructure/` | 46 | A disposable PostgreSQL for the database tests (`TEST_DATABASE_URL`) |
+| Infrastructure tests (auth, errors, logging, database, migrations, course testing interface) | `tests/infrastructure/` | 63 | A disposable PostgreSQL for the database tests (`TEST_DATABASE_URL`) |
 | Fixture checks (shared JSON cases follow the contract's field rules) | `tests/fixtures/` | 31 | Nothing |
 | Script self-tests | `tests/scripts/` | 7 | Nothing |
+| Tester service tests (Srihari) | `tests/tester/` | 25 | Nothing |
 | HTTP client self-tests | `tests/acceptance/test_client_selftest.py` | 5 | Nothing |
 | **Acceptance suite** (AC-01 to AC-05, AC-14, plus `/health` and `/reset`) | `tests/acceptance/`, marker `acceptance` | 48 | `BASE_URL`, `API_KEY`. Reset tests also need `ALLOW_DESTRUCTIVE_TESTS=1` |
 | **AC-16 scripts** (restart persistence, reset, response time) | `scripts/check_persistence.py`, `scripts/performance.py` | — | `BASE_URL`, `API_KEY`. The restart happens between the `create` and `verify` steps |
 
-The acceptance suite only talks HTTP to a base URL, so the same tests run against a local app, CI, our deployment, or the other team's deployment. The shared inputs are plain JSON in `tests/fixtures/data/`.
+Our deployed tester (https://incident-tester-356019173418.us-central1.run.app, Srihari) wraps the same suite behind the course testing interface (`POST /test/setup`, `POST /test/run`, `GET /test/report`); see `docs/cross-team-testing.md`. The acceptance suite only talks HTTP to a base URL, so the same tests run against a local app, CI, our deployment, or the other team's deployment. The shared inputs are plain JSON in `tests/fixtures/data/`.
 
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push to `main` and `integration`, and on every pull request:
 
 1. Static checks: `ruff check`, `ruff format --check`, `mypy` (strict).
-2. The 170 non-acceptance tests, against a disposable PostgreSQL service.
+2. The 212 non-acceptance tests, against a disposable PostgreSQL service.
 3. Migrates and starts the app inside the job, then runs the 48 acceptance tests against it with a throwaway key.
 4. AC-16 smoke test: creates 100 incidents, restarts the app, verifies them, resets, then runs the response-time check.
 
-Latest run on `integration` (`9720693`, 2026-10-18): all green. 170 passed; acceptance 47 passed, 1 skipped (the HTTPS check skips for a local target); 100/100 persisted; 200/200 within 1 s. CI never calls a deployed service.
+Latest run on `integration` (`c4b6643`, 2026-10-19 UTC): all green. 212 passed; acceptance 47 passed, 1 skipped (the HTTPS check skips for a local target); 100/100 persisted; 200/200 within 1 s. CI never calls a deployed service.
 
 ## Results
 
@@ -33,6 +34,7 @@ Latest run on `integration` (`9720693`, 2026-10-18): all green. 170 passed; acce
 | --- | --- | --- | --- | --- |
 | 2026-10-16 | Local Docker Compose | 47 passed, 1 skipped (HTTPS) | 100/100 after app and full-stack restarts | 200/200 within 1 s, p95 16 ms (loopback) |
 | 2026-10-18 | Our deployment (Cloud Run) | **48 passed**, 0 skipped | **100/100** after a revision restart; all removed by reset | **200/200 within 1 s**, p95 61 ms |
+| 2026-10-18 | Our deployment (`f551649`), through our deployed tester | **48 pass**; code coverage 135/522 lines; 8/16 ACs exercised | — | — |
 
 Details: [local run](../test-results/2026-10-16-local-ac16.md), [deployed run](../test-results/2026-10-18-deployed.md).
 
