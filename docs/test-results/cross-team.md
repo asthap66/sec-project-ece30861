@@ -31,4 +31,4 @@ Record each run in this folder with the date, their commit or version if they sh
 | Direction | Status |
 | --- | --- |
 | Our tests → their service | Non-destructive run 2026-10-18: [45 passed, 0 failed, 3 reset tests skipped](2026-10-18-cross-team-ours-on-theirs.md). Reset tests and AC-16 wait for an agreed window |
-| Their tests → our service | Ready on our side (deployed 2026-10-18, 48/48 of our own suite passing). Waiting for them to run |
+| Their tests → our service | Blocked. Their tester needs `/test/setup` and `/test/report` on our service, which we don't have yet (see Q6) |
