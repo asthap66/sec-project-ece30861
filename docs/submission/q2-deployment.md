@@ -44,8 +44,8 @@ curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i 
   The persistence and performance runs below were against an earlier
   deployment, `f2b607c`. The incident and evidence routes are the same, but
   `f551649` also adds the testing interface, migration 0002, coverage
-  instrumentation and max instances 1. AC-16 hasn't been re-run on `f551649`
-  (`docs/test-results/2026-10-18-deployed-f551649.md`).
+  instrumentation and max instances 1. AC-16 was re-run on `f551649` on
+  2026-10-19 and passed (`docs/test-results/2026-10-19-ac16-deployed.md`).
 
 ## Secrets
 
@@ -79,8 +79,8 @@ curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i 
 | Check | Result |
 | --- | --- |
 | Acceptance suite (`pytest -m acceptance`, AC-01 to AC-05, AC-14) | **48 passed**, 0 failed, 0 skipped |
-| Restart persistence (AC-16) | 100/100 incidents intact after restart; all 100 created IDs gave 404 after reset |
-| Performance (AC-16): 100 incidents loaded, 200 sequential requests from a laptop | **200/200 within 1 s** (needs 95%); p50 48 ms, p95 61 ms, max 76 ms; 0 errors |
+| Restart persistence (AC-16) | 100/100 incidents intact after restart; all 100 created IDs gave 404 after reset. Final `f551649` (2026-10-19): also 100/100 |
+| Performance (AC-16): 100 incidents loaded, 200 sequential requests from a laptop | **200/200 within 1 s** (needs 95%); p50 48 ms, p95 61 ms, max 76 ms; 0 errors. Final `f551649` (2026-10-19): 200/200, p50 46.4 ms, p95 65.0 ms, max 171.9 ms |
 
 One unexplained event: on the first persistence run, one request timed out on
 the client side (10 s), so that run was repeated. Cloud Run's request logs for
