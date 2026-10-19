@@ -88,3 +88,15 @@ Our tester against our deployed system:
 - Running again: `409`. The stored report matches the run response.
 - Non-approved target: `400`.
 - Our system's `/test/setup` without a key: `401` with `source: system`.
+
+## Cross-team run: our tester against the other team's system (2026-10-18)
+
+Target: https://incident-clock.onrender.com, key stored in Secret Manager
+(`tester-target-keys`). Session `7c8dd57b-c179-48f1-8a92-465b4d8063be`.
+
+- Setup: `201` in 0.8 s. Run: `200` in 9.9 s. **48 pass**, nothing failed or skipped.
+  The stored report matches the run response.
+- Coverage:
+  - code: 325/406 lines, reported by their system; their basis counts lines run at import as executed, ours doesn't, so the two numbers can't be compared directly
+  - component: null
+  - system: 8/16
