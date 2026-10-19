@@ -7,6 +7,8 @@ Compiled: 2026-10-18 (US Eastern evening; 2026-10-19 UTC).
 
 ## How to use this file
 
+**Update 2026-10-19 01:55 UTC:** `docs/submission/mohit-gradescope-ready.md` is the final, corrected version of the Q4, Q6 and Q7 answers. Where this file and that one differ, that one wins. Part 8 below embeds the current drafts, which agree with it.
+
 This file is the evidence needed to answer three Phase 3 submission questions:
 
 - **Q4 Automated validation**
@@ -39,7 +41,7 @@ Rules for anyone writing answers from it:
 - Part 5: Live spot checks (raw HTTP observations)
 - Part 6: Latest CI run (raw log excerpt)
 - Part 7: Complete test inventory (every test ID)
-- Part 8: Submission drafts as committed (Q2, Q3, Q4, Q6, Q7)
+- Part 8: Submission drafts as committed (final Gradescope answers, Q2, Q3)
 - Part 9: Test-result records as committed
 - Part 10: Contract issues and the cross-team testing interface
 - Part 11: CI workflow source
@@ -51,6 +53,20 @@ Rules for anyone writing answers from it:
 ---
 
 ## Part 0: Facts at a glance
+
+### Submission readiness (2026-10-18, about 22:15 EDT)
+
+| Item | Status |
+| --- | --- |
+| Paste-ready Q4, Q6, Q7 answers | Done: `docs/submission/mohit-gradescope-ready.md` (merged via PR #11) |
+| Class registry entry | Submitted (confirmed by the team) |
+| Hosting on Google Cloud | Confirmed acceptable |
+| Our tester → other team's system | Done: 48 pass, 0 fail, 0 skipped (Srihari) |
+| Our suite → other team's system (direct) | Done: 45 passed, 0 failed, 3 skipped |
+| Their tester → our system | **PENDING.** They said they were running it; no report received. Q6.1 says pending |
+| AC-16 restart and timing on final `f551649` | **PENDING.** Not run; Q4.5 shows the earlier `f2b607c` results separately |
+
+Both pending items are disclosed honestly in the answers, so they don't block submitting. If either result arrives first, Q4.5 or Q6.1 should be updated with the real numbers.
 
 ### Team
 
@@ -66,7 +82,7 @@ All work merges into `integration`. `main` was frozen at `d2198a4` on 2026-10-16
 
 | Thing | URL | Notes |
 | --- | --- | --- |
-| Our system | https://incident-api-356019173418.us-central1.run.app | Google Cloud Run + Cloud SQL PostgreSQL 16, HTTPS, `X-App-Commit` header shows the deployed commit (`f551649` at compile time) |
+| Our system | https://incident-api-356019173418.us-central1.run.app | Google Cloud Run + Cloud SQL PostgreSQL 16, HTTPS, `X-App-Commit` header shows the deployed commit (`f551649` at compile time; this is the final version) |
 | Our tester | https://incident-tester-356019173418.us-central1.run.app | Course testing interface: `POST /test/setup`, `POST /test/run`, `GET /test/report`. Runs our acceptance suite |
 | Other team's system | https://incident-clock.onrender.com | Publishes its contract at `/openapi.yaml` |
 | Other team's tester | https://incident-clock-tester.onrender.com | Course testing interface |
@@ -81,10 +97,13 @@ All work merges into `integration`. `main` was frozen at `d2198a4` on 2026-10-16
 
 | Evidence | Target | Who ran it | Result |
 | --- | --- | --- | --- |
-| Acceptance suite | Our deployment (`ed5f449`) | Srihari, using Mohit's suite | **48 passed, 0 failed, 0 skipped** |
-| Acceptance suite via our tester | Our deployment (`f551649`) | Srihari, through the deployed tester | **48 pass**; code coverage 135/522 lines; 8/16 ACs exercised |
-| Restart persistence (AC-16) | Our deployment (`f2b607c`, same API) | Srihari, using Mohit's script | **100/100 incidents intact** after a Cloud Run revision restart; all removed by reset |
-| Response time (AC-16) | Our deployment (`f2b607c`) | Srihari, using Mohit's script | **200/200 within 1 s** (target 95%); p50 48 ms, p95 61 ms, max 76 ms; 0 errors |
+| Acceptance suite | Earlier deployment `ed5f449` | Srihari, using Mohit's suite | **48 passed, 0 failed, 0 skipped** |
+| Acceptance suite via our tester | Our deployment (`f551649`) | Srihari, through the deployed tester | **48 pass**; code coverage 135/522 lines; 8/16 ACs had at least one test run (not 8 fully met) |
+| Keyless acceptance subset | Final deployment `f551649` | Mohit, 2026-10-19 01:55 UTC | **7 passed, 0 failed, 41 skipped** (no key available to Mohit) |
+| AC-16 persistence and timing | Final deployment `f551649` | n/a | **Not run** (needs the key, a restart and a reset, all coordinated by Srihari) |
+| Our tester → other team's system | Their deployment | Srihari, 2026-10-18 | **48 pass, 0 fail, 0 skipped**; code 325/406 (their basis); system 8/16 |
+| Restart persistence (AC-16) | Earlier deployment `f2b607c` (same incident/evidence routes; not the final version) | Srihari, using Mohit's script | **100/100 incidents intact** after a Cloud Run revision restart; all removed by reset |
+| Response time (AC-16) | Earlier deployment `f2b607c` | Srihari, using Mohit's script | **200/200 within 1 s** (target 95%); p50 48 ms, p95 61 ms, max 76 ms; 0 errors |
 | Acceptance suite, non-destructive | **Other team's** deployment | Mohit | **45 passed, 0 failed, 3 skipped** (the 3 `/reset` tests, skipped on purpose) |
 | Acceptance suite | Local Docker Compose (`f6b8df6`) | Mohit | 47 passed, 1 skipped (HTTPS check skips locally) |
 | Restart persistence | Local Docker Compose | Mohit | 100/100 after an app restart **and** after a full stack restart |
@@ -142,7 +161,7 @@ All work merges into `integration`. `main` was frozen at `d2198a4` on 2026-10-16
 | AC-14 health is public; missing or wrong key gives 401; valid key accepted; HTTPS | `test_ac14_security.py` |
 | AC-14 / REQ-14 error format | `test_system_endpoints.py::test_401_uses_error_format` |
 | AC-16 reset returns `RESET_COMPLETE`, needs a key, is repeatable | `test_system_endpoints.py::test_reset_*` (destructive) |
-| AC-16 restart persistence; reset leaves nothing | `scripts/check_persistence.py create / verify / reset` |
+| AC-16 restart persistence; reset (per created ID) | `scripts/check_persistence.py create / verify / reset` |
 | AC-16 response time: 95% within 1 s at 100 incidents | `scripts/performance.py` (200 requests: 75% GET incident, 20% POST evidence, 5% health; seed 30861) |
 
 **Continuous integration.** File `.github/workflows/ci.yml`, in Part 11. It runs on every push to `main` and `integration` and on every pull request:
@@ -165,7 +184,7 @@ CI never calls a deployed service. The latest run is `integration` at `c4b6643`,
 | --- | --- | --- | --- | --- | --- |
 | 2026-10-16 | Local Docker Compose (`f6b8df6`) | 47 passed, 1 skipped (HTTPS, local) | 100/100 after app restart; 100/100 after full stack restart; reset left 100/100 returning 404 | 200/200 ≤ 1 s; p50 6.4 ms, p95 16.1 ms, max 31.4 ms | Mohit |
 | 2026-10-18 | Our deployment (`ed5f449`) | **48 passed**, 0 skipped | — | — | Srihari, Mohit's suite |
-| 2026-10-18 | Our deployment (`f2b607c`, same API) | — | **100/100** after revision `incident-api-00002-msv` → `incident-api-00003-ggj`; reset removed all 100 | **200/200 ≤ 1 s**; p50 48 ms, p95 61 ms, max 76 ms; 0 errors | Srihari, Mohit's scripts |
+| 2026-10-18 | Earlier deployment `f2b607c` | — | **100/100** after revision `incident-api-00002-msv` → `incident-api-00003-ggj`; reset removed all 100 | **200/200 ≤ 1 s**; p50 48 ms, p95 61 ms, max 76 ms; 0 errors | Srihari, Mohit's scripts |
 | 2026-10-18 | Our deployment (`f551649`) via our tester | **48 pass**; code coverage 135/522 lines; 8/16 ACs (AC-01, 02, 03, 04, 05, 08, 14, 16) | — | — | Srihari |
 | 2026-10-18 | Other team's deployment | **45 passed, 0 failed, 3 skipped** (reset tests, on purpose) | not run | not run | Mohit |
 
@@ -174,12 +193,12 @@ CI never calls a deployed service. The latest run is `integration` at `c4b6643`,
 - **AC-14 checks.** Before the real service existed, the AC-14 tests passed against a throwaway local stub that checked keys, and failed against the bare scaffold that had no routes.
 - **Real failures seen and explained.**
   1. *CI failure on PR #6.* The setup-uv post-job cache prune timed out because a background `uv run uvicorn` held the uv cache lock. The fix launches the app with `.venv/bin/uvicorn` and adds an always-run "Stop app" step. The next run passed.
-  2. *Local failure of `tests/infrastructure/test_feature_database.py::test_postgres_create_retrieve_evidence_restart_reset`* (Astha's test, line 44: `assert before <= recorded <= datetime.now(UTC)`). The cause is clock skew: the Docker Desktop VM's clock (which sets PostgreSQL `now()`) differed from the host clock by about 3–4 s (host `date -u` 21:10:30 vs container 21:10:27; the assertion showed DB 21:10:21 vs host 21:10:17). It's not a code defect, and it passes in CI. The fix is a small tolerance.
-  3. *One client-side timeout* (10 s) during the first deployed persistence run. Cloud Run's request logs showed no request slower than 0.36 s, so the network path is the likely cause. The run was repeated and passed.
+  2. *Local failure of `tests/infrastructure/test_feature_database.py::test_postgres_create_retrieve_evidence_restart_reset`* (Astha's test, line 44: `assert before <= recorded <= datetime.now(UTC)`). The suspected cause is clock skew, not confirmed: the Docker Desktop VM's clock (which sets PostgreSQL `now()`) differed from the host clock by about 3–4 s (host `date -u` 21:10:30 vs container 21:10:27; the assertion showed DB 21:10:21 vs host 21:10:17). It passes in CI. The fix is a small tolerance.
+  3. *One client-side timeout* (10 s) during the first deployed persistence run. Cloud Run's request logs showed no request slower than 0.36 s, which suggests a network delay; that wasn't confirmed. The run was repeated and passed.
   4. *Static-check failures during development*, all fixed before merge: a mypy `no-any-return` in `assertions.py`, Ruff E501 long lines in the scripts, and a Ruff import-order issue in `conftest.py`.
 
 **Gaps (honest limits of the validation).**
-- AC-02's count check and AC-16's "no incidents remain" need a list route (`GET /incidents`), which the pod contract doesn't have (contract issue #2). Both are checked one ID at a time instead.
+- AC-02's count check and AC-16's "no incidents remain" need a list route (`GET /incidents`), which the pod contract doesn't have (contract issue #2). Over HTTP, both are only checked for the IDs we created. DB-level tests (`test_postgres_invalid_incidents_do_not_write`, `test_reset_clears_everything_and_restarts_ids`) cover the rest in CI.
 - Length-boundary tests wait on agreed limits (issue #3). The placeholders are title ≤ 200, description ≤ 5000.
 - There are no tests for the Phase 4 operations (decisions, corrections, deadline status, filing, timeline) or the 409 state rules, because those operations don't exist yet.
 - Mohit's own keyed runs against our deployment were done by Srihari, who holds the key in Secret Manager. Mohit's personal checks of our deployment are keyless (Part 5).
@@ -195,7 +214,7 @@ CI never calls a deployed service. The latest run is `integration` at `c4b6643`,
 | Deployed results | Part 9, `2026-10-18-deployed.md`; Part 8, Q2; Part 10, `cross-team-testing.md` "Live check" |
 | Local results | Part 9, `2026-10-16-local-ac16.md` |
 | Traceability | Part 9, `traceability.md` |
-| Suite design | Parts 12–14 (source of the HTTP client and scripts is in the repo: `tests/acceptance/client.py`, `scripts/*.py`) |
+| Suite design | Parts 12 to 14 (the HTTP client and scripts are in the repo) |
 
 ---
 
@@ -220,11 +239,11 @@ Grading note from the course overview slides: assessment includes "pod cross-tes
 | Direction | What happened | Result |
 | --- | --- | --- |
 | Our suite → their system (`incident-clock.onrender.com`) | 2026-10-18, about 8:30 PM US Eastern, run by Mohit from a laptop, without `ALLOW_DESTRUCTIVE_TESTS`, with their key (shared privately) | **45 passed, 0 failed, 3 skipped.** Skips are the `/reset` tests in `test_system_endpoints.py`, skipped on purpose. All AC-01 to AC-05, REQ-07 and AC-14 tests passed, including HTTPS |
-| Their tester → our system | Our system has the course interface (`/test/setup`, `/test/report`, Srihari, `f551649`). We sent our system and tester URLs; Srihari sends the key privately | **Not run yet** at compile time |
-| Our tester → their system | Needs their key in our Secret Manager (`tester-target-keys`) and their URL in the tester's `ALLOWED_TARGETS` | **Not run yet** |
+| Their tester → our system | Our system has the course interface (`/test/setup`, `/test/report`, Srihari, `f551649`). We sent our system and tester URLs; Srihari sends the key privately | **Pending.** They said around 22:00 EDT that they were running it; no report received |
+| Our tester → their system | Done 2026-10-18 by Srihari, session `7c8dd57b-c179-48f1-8a92-465b4d8063be` | **48 pass, 0 fail, 0 skipped**; code 325/406 (their basis); system 8/16 |
 | Our tester → our system (check of our own interface) | 2026-10-18, Srihari | 48 pass; code coverage 135/522 lines; component coverage null (pod spec defines no components); system coverage 8/16 ACs |
 
-**What the 45/45 shows.** The other team's AC-01 to AC-05, REQ-07 and AC-14 behaviour matches the contract as our tests read it. It says nothing about their AC-16 behaviour (persistence, reset, response time), which we haven't run against them.
+**What the 45 passes (3 skipped) show.** The other team's AC-01 to AC-05, REQ-07 and AC-14 behaviour matches the contract as our tests read it. It says nothing about their AC-16 behaviour (persistence, reset, response time), which we haven't run against them.
 
 **Observed differences between the two systems.** These are real HTTP responses, from Part 5 and the run record.
 - Health body: ours `{"status":"OK"}`, theirs `{"status":"ok"}`. Both satisfy `{status: string}`.
@@ -289,11 +308,11 @@ Grading note from the course overview slides: assessment includes "pod cross-tes
   - The commit is in the `X-App-Commit` header.
   - One warm instance (max instances 1, for coverage consistency).
 - **Validated:** see Part 1. 48/48 deployed, 100/100 persisted, 200/200 under 1 s, CI green.
-- **Cross-team:** 45/45 of our suite on their system. Tester runs in both directions are still pending.
+- **Cross-team:** 45 passed, 0 failed, 3 skipped of our suite on their system. Our tester against them: 48 pass, 0 fail (Srihari). Their tester against us: pending.
 
 **Changes from the Phase 2 plan.**
 - **Specification source:** the Phase 2 pod contract v1.0, because no instructor OpenAPI file was available (issue #1).
-- **Hosting:** Google Cloud Run and Cloud SQL. Note: the course overview slide says "deployed to AWS"; this should be checked with the instructor if it's a hard requirement.
+- **Hosting:** Google Cloud Run and Cloud SQL (confirmed acceptable for the course, 2026-10-18).
 - **Auth-first precedence:** the API key is checked before routing, validation or lookup (issue #4, matching Model 4).
 - **AC-16 as scripts, not pytest tests:** a restart has to happen between steps.
 - **Course testing interface added**, which wasn't in the Phase 2 pod contract: system `/test/*` endpoints and a deployed tester. The new `test_sessions` table comes in migration 0002.
@@ -302,9 +321,9 @@ Grading note from the course overview slides: assessment includes "pod cross-tes
 - Phase 4 operations: decisions, corrections, deadline status, filing, timeline. 409 state rules aren't exercised.
 - `GET /incidents` isn't in the contract (issue #2).
 - Length limits are placeholders (issue #3), so there are no boundary tests.
-- Cross-team tester runs haven't happened in either direction, and the destructive `/reset` and AC-16 cross-team runs haven't been done.
+- Their tester's report against our system hasn't arrived, and cross-team AC-16 (restart and timing) hasn't been done in either direction.
 - Component coverage in tester reports is null, because the pod spec defines no component list.
-- The class registry entry was still marked "TODO: confirm submitted" in Q2.
+- The class registry entry is submitted (confirmed by the team, 2026-10-18).
 
 **Known defects and risks.**
 - **Clock-sensitive database test** (`test_feature_database.py` line 44) fails when the DB clock and the test host's clock disagree by a few seconds. Owner: Astha. Fix: add a tolerance.
@@ -320,7 +339,6 @@ Grading note from the course overview slides: assessment includes "pod cross-tes
 3. Implement the Phase 4 operations. Extend fixtures and the acceptance suite with their ACs, including 409 state rules and the `as_of` deadline checks.
 4. Agree a reset window; run destructive tests and AC-16 in both directions.
 5. Add a timestamp tolerance to the clock-sensitive test.
-6. Confirm the hosting requirement (AWS vs Google Cloud) and the registry submission.
 
 ### 3.3 Evidence map for Q7
 
@@ -395,11 +413,18 @@ f551649 2026-10-18 Srihari Srikanth  Add the tester service for the course testi
 c7b3a0b 2026-10-18 Srihari Srikanth  Document the cross-team testing interface and the deployed tester
 16f6764 2026-10-18 Mohit  docs: finish Q6 and draft Q7
 c4b6643 2026-10-18 Mohit Manna  Merge pull request #9 from asthap66/acceptance-ci
+569bbb3 2026-10-18 Mohit  docs: add mohit-answers evidence pack; update Q4/Q6/Q7 for the testing interface
+a520f25 2026-10-18 Mohit Manna  Merge pull request #10 from asthap66/acceptance-ci
+937c44a 2026-10-18 Mohit  docs: final Q4/Q6/Q7 answers, f551649 results, and corrected stale claims
+50992d1 2026-10-18 Srihari Srikanth  Record the cross-team run against the other team's system
+306b55a 2026-10-18 Srihari Srikanth  Merge remote-tracking branch 'origin/integration' into integration
+18e79c3 2026-10-18 Mohit  Merge remote-tracking branch 'origin/integration' into acceptance-ci
+4179bc5 2026-10-18 Mohit  docs: record our tester's 48/48 run against the other team; update Q6/Q7
 ```
 
 ## Part 5: Live spot checks (raw HTTP observations)
 
-Captured by Mohit with `curl` while compiling this file, without any API key.
+Captured by Mohit with `curl` on 2026-10-19 around 01:24 UTC, without any API key.
 
 ```text
 Mon Oct 19 01:24:18 UTC 2026
@@ -414,9 +439,9 @@ GET https://incident-clock.onrender.com/health -> {"status":"ok"} 200
 GET https://incident-clock.onrender.com/incidents/INC-001 (no key) -> {"error":"UNAUTHORIZED","message":"missing or invalid X-API-Key header"} 401
 ```
 
-## Part 6: Latest CI run (raw log excerpt)
+## Part 6: CI run excerpt
 
-GitHub Actions run 39184911384 on `integration` at `c4b6643`, success, 57 s. Lines are `step | output`, filtered to results. In the JSON, per-operation p50 values are 0.9 ms (health), 2.9 ms (GET incident) and 4.6 ms (POST evidence), with counts 10, 150 and 40.
+GitHub Actions run 39184911384 on `integration` at `c4b6643`, success. The run on the deployed commit `f551649` (39182054445) and run 39185515218 (`a520f25`) have the same counts. Lines are `step | output`.
 
 ```text
 Ruff lint | All checks passed!
@@ -455,7 +480,7 @@ AC-16 response time | }
 
 ## Part 7: Complete test inventory
 
-Output of `uv run pytest --collect-only -q` on `integration`. Tests in `tests/acceptance/` other than `test_client_selftest.py` carry the `acceptance` marker (48).
+Output of `uv run pytest --collect-only -q`. These are tests **collected**, not passed. Tests in `tests/acceptance/` other than `test_client_selftest.py` carry the `acceptance` marker (48).
 
 ```text
 tests/acceptance/test_ac01_05_incidents_evidence.py::test_ac01_create_then_retrieve_returns_identical_values[contract-example-ransomware]
@@ -730,6 +755,221 @@ tests/unit/test_schemas.py::test_existing_source_storage_limit
 
 ## Part 8: Submission drafts as committed
 
+### `docs/submission/mohit-gradescope-ready.md`
+
+```markdown
+# Phase 3 Gradescope answers: Q4, Q6, Q7 (paste-ready)
+
+Owner: Mohit. Compiled 2026-10-18, 21:55 EDT (2026-10-19 01:55 UTC).
+
+Sources: `docs/test-results/`, `docs/cross-team-testing.md`, `docs/contract-issues.md`, CI runs on GitHub, and live HTTP checks.
+
+The exact Phase 3 rubric wording wasn't available locally. The subsections follow the team README (section 9) and the Phase 2 pod spec. Check each sentence limit against the Gradescope form before pasting.
+
+Items marked **PENDING** are not done. The class registry entry was confirmed submitted by the team on 2026-10-18. Google Cloud hosting was confirmed acceptable. Don't paste them as if they were.
+
+## Version facts used below
+
+| Fact | Value | How it was checked |
+| --- | --- | --- |
+| Final deployed system (cover page) | `f551649` at https://incident-api-356019173418.us-central1.run.app | `X-App-Commit` header, 2026-10-19 01:55 UTC |
+| Our tester | https://incident-tester-356019173418.us-central1.run.app | `GET /health` returned 200 |
+| CI run on the deployed commit | [run 39182054445](https://github.com/asthap66/sec-project-ece30861/actions/runs/39182054445), `f551649`, success | GitHub Actions |
+| Latest CI run on `integration` | [run 39185515218](https://github.com/asthap66/sec-project-ece30861/actions/runs/39185515218), `a520f25`, success | GitHub Actions |
+| Older deployments with results | `ed5f449` (acceptance), `f2b607c` (AC-16 persistence and performance) | Q2 and `docs/test-results/2026-10-18-deployed.md` |
+
+**Changes between `f2b607c` and `f551649`:**
+- Deployment scripts and the `X-App-Commit` header.
+- The `/docs` Authorize button.
+- The course testing interface: `/test/setup`, `/test/report`, migration 0002 and per-session coverage via `APP_COVERAGE=1`.
+- Max instances changed to 1.
+
+The incident and evidence routes are the same, but this isn't a docs-only difference.
+
+---
+
+## Q4.1 Deployment, configuration and contract basis
+
+Our system is deployed on Google Cloud Run with Cloud SQL PostgreSQL 16 at https://incident-api-356019173418.us-central1.run.app. It's served over HTTPS, and plain HTTP gets a 302 redirect to HTTPS. The deployed commit is `f551649`, which the service reports in the `X-App-Commit` header. On 2026-10-19 at 01:55 UTC, `/health` returned 200 without a key, and a missing or wrong key on `/incidents/INC-001` returned 401 with `{"error":"UNAUTHORIZED","message":...}`.
+
+The test suite takes its target from two environment variables:
+- `BASE_URL` must be http or https, and HTTPS is checked for non-local targets.
+- `API_KEY` is sent in `X-API-Key`.
+
+The key is never stored in the repo. Our deployed tester takes a `target_url` and only accepts approved pod URLs.
+
+No instructor OpenAPI file was available, so both teams built from the Phase 2 pod contract v1.0 (Q5.1 to Q5.3, AC-01 to AC-16). The other team's published `/openapi.yaml` is a transcription of the same contract.
+
+**Known deviations and open points:**
+- **No `GET /incidents`:** the contract doesn't define it either, so this isn't a deviation (issue #2).
+- **Length limits:** title ≤ 200 and description ≤ 5000 are our placeholders, not pod-approved values (issue #3).
+- **`/test/*` errors:** these use the course testing interface's `{message, source}` format, not the project API's `{error, message}` format.
+- **`HEAD /health` returns 405.** Only GET is in the contract.
+
+## Q4.2 AC-to-test mapping and expected outputs
+
+| AC | Tests | Success cases | Failure cases | Boundary / gaps |
+| --- | --- | --- | --- | --- |
+| AC-01 (REQ-01, REQ-14) | `test_ac01_create_then_retrieve_returns_identical_values[4 fixtures]`, `test_ac01_each_incident_gets_a_distinct_id` | 201, status `OPEN`, GET returns identical values; `discoveredAt` compared as the same UTC instant | n/a | Offsets −04:00, +05:30 and Z normalised to UTC; non-ASCII text |
+| AC-02 (REQ-02, REQ-14) | `test_ac02_invalid_incident_is_rejected_naming_the_field[10 fixtures]` | n/a | 400, `{error, message}`, message names the field: the 3 AC-02 cases (missing description, no offset, future date 2099) plus missing title/discoveredAt/reporterName, empty title/reporterName, malformed timestamp, wrong type | Black-box tests can't count incidents (no list route). The "nothing saved" half comes from DB tests: `test_feature_database.py::test_postgres_invalid_incidents_do_not_write` (row counts stay 0 in PostgreSQL) and `tests/unit/test_incidents.py::test_missing_fields_leave_no_records` / `test_invalid_input_no_write`. Max-length cases wait on issue #3 |
+| AC-03 (REQ-14) | `test_ac03_unknown_id_get_and_post_return_404[2 ids]`, `test_unknown_incident_get_is_404_with_error_format[2 ids]` | n/a | 404 with error code and message on GET and POST | IDs in both our format and a free-form string |
+| AC-04 (REQ-03) | `test_ac04_three_technical_items_are_linked_to_the_incident`, `test_ac04_evidence_is_not_shared_between_incidents` | Three TECHNICAL items returned with source and timestamps; no leakage to another incident | Unknown incident gives 404 (AC-03 tests) | n/a |
+| AC-05 (REQ-03) | `test_ac05_evidence_is_stored_and_returned_unchanged[6 fixtures]`, `test_invalid_evidence_is_rejected_and_not_attached[7 fixtures]` | BUSINESS_IMPACT, LEGAL, OTHER and TECHNICAL returned unchanged | 400 naming the field, and a follow-up GET shows nothing attached | Future `collectedAt` is allowed (the contract only forbids future discovery) |
+| REQ-07 part of AC-08 | `test_stored_incident_cannot_be_edited_or_deleted[PUT, PATCH, DELETE]` | n/a | 405 and the incident unchanged | **Only the no-edit/no-delete half.** Correction history (REQ-06) is Phase 4/5 and has no tests |
+| AC-14 (REQ-13) | `test_health_is_public`, `test_authenticated_route_rejects_bad_key[missing, wrong]`, `test_authenticated_route_accepts_valid_key`, `test_deployment_uses_https`, `test_401_uses_error_format[2]`, `test_health_body_has_status` | Health without a key, valid key accepted | 401 `{error, message}` for missing and wrong key | HTTPS check skips for local http targets |
+| AC-16 (REQ-14, REQ-15) | `test_reset_requires_key[2]`, `test_reset_succeeds_and_is_repeatable` (destructive, opt-in); `scripts/check_persistence.py`; `scripts/performance.py` | Reset gives `RESET_COMPLETE`; 100/100 after restart; at least 95% of 200 requests within 1 s | Reset without a key gives 401 | "No incidents remain after reset" is only checked for the IDs we created. That doesn't prove other records are gone. The DB-level proof is `test_database.py::test_reset_clears_everything_and_restarts_ids` (tables empty) |
+
+**Why the expected outputs are trustworthy:**
+- **They come from the shared contract, not from our code.** Every expected value comes from the pod contract text, and the fixture JSON (`tests/fixtures/data/*.json`) stores its expected result next to its input.
+- **The fixtures are checked.** 31 tests in `tests/fixtures/test_fixture_data.py` check that the fixtures follow the contract's field rules.
+- **The tests fail when the feature is missing.** Against a build without the incident routes, 33 of 35 AC-01 to AC-05 tests failed. The 2 that passed are 404 checks, which a missing route also satisfies.
+- **The suite has run against two independent implementations.** It passed against ours and against the other team's (45 passed, 3 reset tests skipped).
+
+## Q4.3 Regression process
+
+Every push to `main` or `integration`, and every pull request, runs `.github/workflows/ci.yml`:
+1. Static checks.
+2. 212 unit, infrastructure, fixture, script and tester tests against a disposable PostgreSQL 16 container.
+3. The app is migrated and started inside the job, and the 48 acceptance tests run against it with a throwaway key. Reset tests are included.
+4. AC-16 smoke test: create 100 incidents, restart the app, verify 100/100, reset, then the 200-request timing check.
+
+CI never calls a deployed service. Deployed runs are recorded separately in `docs/test-results/`.
+
+The CI run on the deployed commit `f551649` is [run 39182054445](https://github.com/asthap66/sec-project-ece30861/actions/runs/39182054445) (success):
+- 212 passed.
+- Acceptance: 47 passed, 1 skipped (the HTTPS check skips for a local http target).
+- 100/100 incidents persisted.
+- 200/200 requests within 1 s (p50 3.7 ms, p95 5.9 ms, max 8.2 ms on loopback).
+
+The latest run on `integration`, [run 39185515218](https://github.com/asthap66/sec-project-ece30861/actions/runs/39185515218) at `a520f25`, had the same counts.
+
+## Q4.4 Static checks and enforcement
+
+Static checks run in the same CI job, before any tests, on every push to `main`/`integration` and on every pull request:
+- `ruff check` (rules E, F, W, I, B, UP, N, S, SIM).
+- `ruff format --check`.
+- `mypy` in strict mode with the pydantic plugin, over `app`, `tests`, `scripts` and `tester`.
+
+On `f551649`: ruff "All checks passed!", "85 files already formatted", mypy "Success: no issues found in 61 source files".
+
+**Enforcement: not enforced.** Checked on 2026-10-19 with authenticated `gh api`:
+- **No branch protection:** the API reports `protected: false` for both `integration` and `main`.
+- **No rulesets:** the rulesets API returns 403 ("Upgrade to GitHub Pro or make this repository public"), so rulesets aren't available on this private repo.
+- **No deployment gate:** the repo has no GitHub environments. Deployment is a manual `scripts/deploy_gcp.sh` run that builds any git ref and doesn't check CI status.
+- **Direct pushes happen:** for example, the `infra` merges into `integration` were pushed without a PR.
+
+CI reports failures, but a failing check doesn't block a merge or a deploy. In practice we only merged PRs and deployed commits after CI passed, and `f551649` has a passing run. That's a team habit, not a gate.
+
+## Q4.5 Results against the final deployment
+
+**Final cover-page version `f551649`:**
+
+| Check | Who ran it | Result |
+| --- | --- | --- |
+| Full acceptance suite through our deployed tester (`/test/setup`, `/test/run`, `/test/report`), reset tests included | Srihari, using Mohit's suite (2026-10-18) | **48 pass**, 0 fail. Code coverage 135 of 522 app lines (from `/test/report`). Component coverage null (the pod spec defines no components). System coverage: 8 of 16 ACs had at least one test run (AC-01, 02, 03, 04, 05, 08, 14, 16). This doesn't mean 8 ACs are fully met: AC-08 only covers the 405 half, and AC-16 only covers reset |
+| Keyless acceptance subset: `BASE_URL=<our system> uv run pytest -m acceptance`, no `API_KEY` | Mohit, 2026-10-19 01:55 UTC, suite at `a520f25` | **7 passed, 0 failed, 41 skipped** (the skipped tests need a key or are destructive). Health public, missing/wrong key gives 401 in the right format, HTTPS |
+| AC-16 restart persistence and 200-request timing | n/a | **PENDING.** Not run on `f551649`. It needs the key, a Cloud Run restart and a reset, all coordinated by Srihari |
+
+**Older deployments (not the final version):**
+
+| Version | Check | Who | Result |
+| --- | --- | --- | --- |
+| `ed5f449` | `pytest -m acceptance` with `ALLOW_DESTRUCTIVE_TESTS=1` | Srihari, using Mohit's suite | 48 passed, 0 failed, 0 skipped |
+| `f2b607c` | `check_persistence create`, revision restart (`incident-api-00002-msv` → `00003-ggj`), `verify`, `reset` | Srihari, using Mohit's script | 100/100 intact; reset removed all 100 created IDs |
+| `f2b607c` | `scripts.performance`: 100 incidents, 200 sequential requests from a laptop | Srihari, using Mohit's script | 200/200 within 1 s; p50 48 ms, p95 61 ms, max 76 ms; 0 errors |
+
+On the first `f2b607c` persistence attempt, one request hit the client's 10 s timeout. Cloud Run logs showed no request slower than 0.36 s, which suggests a network delay, but that wasn't confirmed. The run was repeated and passed.
+
+---
+
+## Q6.1 Cross-team testing in both directions
+
+| Direction | Status | Result | Issues / owners |
+| --- | --- | --- | --- |
+| Our suite → their system (https://incident-clock.onrender.com) | Done 2026-10-18, about 20:25 EDT, by Mohit. Non-destructive (`ALLOW_DESTRUCTIVE_TESTS` unset), suite at `38972ff` | **45 passed, 0 failed, 3 skipped.** The skips are our 3 reset tests, left out because no reset window was agreed | None from the passing tests. Their health returns `"ok"` and ours `"OK"`; both meet `{status: string}`. Our run left synthetic incidents in their database |
+| Their tester → our system | **PENDING.** Our `/test/setup` and `/test/report` are live (`f551649`). They said on 2026-10-18 around 22:00 EDT that they were running it, but no report has reached us yet | No result yet | n/a |
+| Our tester → their system | Done 2026-10-18 by Srihari through our deployed tester (session `7c8dd57b-c179-48f1-8a92-465b4d8063be`). Their key is kept in our Secret Manager. This run included our 3 reset tests | **48 pass, 0 fail, 0 skipped.** Setup 201 in 0.8 s, run 200 in 9.9 s | None found |
+| Our tester → our system (self-check of the interface) | Done 2026-10-18 by Srihari | 48 pass; coverage as in Q4.5 | n/a |
+
+**Coverage available:**
+- **Our tester on our system:** code 135/522 lines; component null; system 8/16 ACs exercised.
+- **Our tester on their system:** code 325/406 lines (reported by their `/test/report`; their basis counts lines run at import, ours doesn't, so the two code numbers can't be compared); component null; system 8/16 ACs with at least one test run.
+- **Our earlier direct suite run on their system:** no code-coverage figure (it didn't use the testing interface). It exercised AC-01 to AC-05, the REQ-07 half of AC-08, and AC-14.
+- **Their tester on our system:** **PENDING.**
+
+## Q6.2 Specification ambiguities
+
+| Ambiguity | Effect | Resolution or proposed plan |
+| --- | --- | --- |
+| No instructor OpenAPI spec | Each team could build its own idea of the interface | Resolved inside our team (issue #1): build from the Phase 2 pod contract v1.0. The other team's `/openapi.yaml` is a copy of the same contract, so we line up in practice |
+| AC-02 says "list all incidents" and AC-16 says "GET the incidents", but there's no list route (issue #2) | Neither team can check "count unchanged" or "no incidents remain" through the API | Proposed to the pod, not agreed: add `GET /incidents`, or reword the ACs. Until then we check per ID and use DB-level tests for "nothing saved" and "tables empty" |
+| Max lengths for title/description are left open (issue #3) | Their schema only requires non-empty strings; we reject title > 200 and description > 5000. Long valid input could pass on theirs and fail on ours | Proposed: agree on numbers with the other team. Ours are placeholders, and boundary tests wait until then |
+| Unknown extra fields aren't covered | One side might reject what the other accepts | We ignore them. Not yet raised with the other team |
+| Error code names: only `{error, message}` is required | Tests checking exact codes could fail across teams | Our tests check the shape, not the code. We share our code list (Q3) and propose comparing |
+| `/reset` and `/test/setup` clear all data on a shared deployment | One team's run can wipe the other's mid-test | No schedule was agreed. On 2026-10-18 Srihari ran our tester (resets included) against theirs, and they said they were running theirs against us. No clash has been reported. Proposed: a written schedule for Phase 4 |
+| The course testing interface sits outside the pod contract | Error format for `/test/*` differs (`{message, source}`); "session" meaning is up to each team | Both teams implemented it. Ours: one active session, setup resets the data, reusing an ID gives 409 (`docs/cross-team-testing.md`) |
+
+---
+
+## Q7.1 Delivered and incomplete work
+
+**Delivered:**
+- Create and retrieve incidents with status `OPEN`, UTC timestamps and `INC-001` IDs (REQ-01, AC-01). Invalid input gets a 400 naming the field, and nothing is saved (REQ-02, AC-02, apart from the list-based count).
+- Evidence attachment with all four categories, recorded time, unknown incident giving 404 (REQ-03, AC-03, AC-04, AC-05). Edit and delete give 405 (REQ-07).
+- API-key auth on everything except `/health`, served over HTTPS (REQ-13, AC-14). `{error, message}` errors and `POST /reset` (REQ-14).
+- Data persists in Cloud SQL across restarts (REQ-15, AC-16 on `f2b607c`).
+- The course testing interface on our system, plus a deployed tester that runs our 48-test suite. It passed 48/48 against both our system and the other team's.
+- CI that runs static checks, 212 tests, the acceptance suite and an AC-16 smoke test on every push.
+
+**Incomplete:**
+- Phase 4 decision workflow and deadlines: REQ-04, REQ-05, REQ-08, REQ-09, REQ-10; AC-06, AC-07, AC-09, AC-10, AC-15. Not started.
+- Corrections, filing, timeline (REQ-06, REQ-11, REQ-12; AC-08 history half, AC-11 to AC-13). Planned for Phase 5.
+- AC-16 persistence and timing on the final deployment `f551649`. Not re-run.
+- Their tester's run against our system (no report yet), and cross-team AC-16 (restart and timing) in both directions.
+- Pod decisions on the list route (issue #2) and length limits (issue #3).
+
+## Q7.2 Known limitations
+
+| ID | Affected REQ / operation | Severity | Workaround | Target phase |
+| --- | --- | --- | --- | --- |
+| L1 | AC-02 count check, AC-16 "no incidents remain" (no `GET /incidents`) | Medium | Per-ID 404 checks over HTTP, plus DB row-count tests in CI | Phase 4, after pod decision |
+| L2 | REQ-02 length limits (`POST /incidents`) | Medium | Placeholders 200/5000; tell the other team our limits | Phase 4, after pod decision |
+| L3 | AC-16 on final version `f551649` not measured | Medium | Results on `f2b607c` (same incident/evidence routes) and CI smoke runs on `f551649` | Before Phase 4 work starts |
+| L4 | Their tester's report against our system not received | High for Q6 grading | Our tester passed 48/48 against them; our interface is live for theirs | Before submission if possible |
+| L5 | `/test/report` coverage held in memory on one instance | Low | `max-instances 1`; restart clears coverage only, not data | Phase 4 |
+| L6 | `test_feature_database.py` line 44 compares the DB clock with the host clock | Low (tests only) | Passes in CI. Failed locally once with a measured 3 to 4 s host/container clock gap | Phase 4 (Astha adds a tolerance) |
+| L7 | No enforced merge or deploy gate | Medium | Team habit of merging and deploying only green commits | Phase 4 (needs branch protection, which this private repo plan doesn't offer, or a public repo) |
+| L8 | `HEAD /health` gives 405 | Low | Use GET | Phase 4, if needed |
+
+## Q7.3 Comparison with the Phase 4 plan and changes needing pod agreement
+
+Our Phase 2 plan (Q6.2) set Phase 4 to deliver:
+- The human materiality decision workflow and state rules.
+- The four-business-day deadline calculator with the holiday list.
+- The deadline-status endpoint.
+- Expanded fixtures, covering REQ-04, REQ-05, REQ-08, REQ-09 and REQ-10 and validated with AC-06, AC-07, AC-09, AC-10 and state-conflict tests.
+
+That plan still holds. Phase 3 delivered what was planned (REQ-01 to REQ-03, REQ-13, and most of REQ-14/15), so Phase 4 can build on working storage, auth and deployment.
+
+**Added to Phase 4:**
+- The leftover Phase 3 items: AC-16 on the final version, the other team's report on our system, and the length-limit and list-route decisions.
+- Upkeep of the course testing interface, which wasn't in the Phase 2 plan.
+
+**Updated risks:**
+- **Deadline arithmetic around holidays and Eastern Time** is still the highest-risk logic. The AC-09 and AC-10 fixtures should be written first.
+- **Shared-deployment resets:** the `/test/setup` and `/reset` calls on a shared deployment can wipe the other team's runs.
+- **Divergent choices on open contract points:** lengths, extra fields and error codes could make cross-team runs fail even when both systems are correct.
+- **No enforced CI gate:** a bad commit could be deployed.
+
+**Changes that need pod agreement (not decided yet):**
+1. Add `GET /incidents` or reword AC-02/AC-16.
+2. Exact max lengths and the whitespace policy.
+3. Whether unknown fields are ignored or rejected.
+4. A shared list of error codes.
+5. A schedule for destructive test windows.
+6. The shared holiday list for AC-10.
+```
+
 ### `docs/submission/README.md`
 
 ```markdown
@@ -766,8 +1006,9 @@ Operating details: `docs/deployment.md`.
   `ece30861-project-62ca4b`, region `us-central1`.
 - **Runtime:** one Docker image (`Dockerfile`): Python 3.12, FastAPI served by
   Uvicorn, dependencies installed from the locked `uv.lock`, running as a
-  non-root user. 1 vCPU, 512 MiB, min 1 / max 2 instances. One instance is kept
-  warm so no request waits for a cold start (REQ-15).
+  non-root user. 1 vCPU, 512 MiB, min 1 / max 1 instances (`scripts/deploy_gcp.sh`
+  since `6d88509`, so a test session's in-memory coverage stays on one
+  instance). One instance is kept warm so no request waits for a cold start (REQ-15).
 - **Database:** Cloud SQL for PostgreSQL 16 (`db-f1-micro`, 10 GB SSD),
   connected through Cloud Run's built-in Cloud SQL connector. It is separate
   from the app, so app restarts and redeploys don't touch the data.
@@ -797,9 +1038,11 @@ curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i 
   (`/test/setup`, `/test/report`); our tester ran all 48 acceptance tests
   against it, all passing (`docs/cross-team-testing.md`). The previous
   deployment, `ed5f449`, also passed 48 acceptance tests.
-  The persistence and performance runs below were against the previous
-  deployment, `f2b607c`, which had the same API (the only change since is the
-  /docs Authorize button).
+  The persistence and performance runs below were against an earlier
+  deployment, `f2b607c`. The incident and evidence routes are the same, but
+  `f551649` also adds the testing interface, migration 0002, coverage
+  instrumentation and max instances 1. AC-16 hasn't been re-run on `f551649`
+  (`docs/test-results/2026-10-18-deployed-f551649.md`).
 
 ## Secrets
 
@@ -828,19 +1071,19 @@ curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i 
   incidents intact**. `reset` then removed all 100.
 - Local check (2026-10-16): the same behaviour with `docker compose restart app`.
 
-## Validation against the deployment (2026-10-18)
+## Validation against earlier deployments (2026-10-18: acceptance on `ed5f449`, AC-16 on `f2b607c`)
 
 | Check | Result |
 | --- | --- |
 | Acceptance suite (`pytest -m acceptance`, AC-01 to AC-05, AC-14) | **48 passed**, 0 failed, 0 skipped |
-| Restart persistence (AC-16) | 100/100 incidents intact after restart; 0 after reset |
+| Restart persistence (AC-16) | 100/100 incidents intact after restart; all 100 created IDs gave 404 after reset |
 | Performance (AC-16): 100 incidents loaded, 200 sequential requests from a laptop | **200/200 within 1 s** (needs 95%); p50 48 ms, p95 61 ms, max 76 ms; 0 errors |
 
 One unexplained event: on the first persistence run, one request timed out on
 the client side (10 s), so that run was repeated. Cloud Run's request logs for
-that period show no request slower than 0.36 s, so the delay was most likely on
-the network path between the laptop and Google, not in the service. It did not
-recur.
+that period show no request slower than 0.36 s, which suggests a delay on the
+network path between the laptop and Google rather than in the service. That
+wasn't confirmed. It did not recur.
 
 ## Logging
 
@@ -868,7 +1111,7 @@ evidence, get it, and a delete attempt (405).
 
 - **Class registry entry:** system base URL above; tester
   https://incident-tester-356019173418.us-central1.run.app (values in
-  `docs/cross-team-testing.md`). TODO: confirm submitted.
+  `docs/cross-team-testing.md`). Submitted (confirmed by the team, 2026-10-18).
 - **Test runner:** `tests/acceptance/` (Mohit). Run with
   `BASE_URL=<url> API_KEY=<key> uv run pytest -m acceptance`.
 - **Docs:** `docs/deployment.md` (operating the deployment), `docs/setup.md`
@@ -889,7 +1132,7 @@ Lead: Srihari. Feature details: Astha. Test results: Mohit.
 
 Status of every operation in the pod's common contract (Phase 2 - Pod.pdf,
 Q5.1–Q5.3) in the code on the `integration` branch, as of 2026-10-17
-(local run: 168 unit/infrastructure tests and 47 acceptance tests passed; against the deployment on 2026-10-18: 48 acceptance tests passed, none skipped). "Yes" means implemented
+(local run on 2026-10-17: 168 unit/infrastructure tests and 47 acceptance tests passed. CI on the deployed commit `f551649`: 212 non-acceptance tests and 47 acceptance tests passed. Against the deployment on 2026-10-18: 48 acceptance tests passed on `ed5f449`, and 48 passed through our tester on `f551649`). "Yes" means implemented
 and covered by a test that passes; the deployed run is recorded in
 `docs/test-results/2026-10-18-deployed.md`.
 
@@ -927,8 +1170,8 @@ Record real observations only (README §9).
 | Wrong-state operations → 409 (REQ-08) | **No**, Phase 4 (no state-changing operations yet) | — |
 | Requests RFC 3339 with offset; responses in UTC (REQ-14) | **Yes** | `discoveredAt: 2026-09-21T14:30:00-04:00` comes back as `2026-09-21T18:30:00Z`; `tests/unit/test_schemas.py`, `test_database.py::test_timestamps_keep_the_instant_and_are_timezone_aware` |
 | IDs `INC-001` / `EVD-001` | **Yes** (database-generated) | `test_database.py::test_ids_have_the_contract_format` |
-| Data kept across restarts until reset (REQ-15) | **Yes**, deployed | 2026-10-18: 100/100 incidents intact after a Cloud Run restart (new revision), 0 after reset (`scripts/check_persistence.py`) |
-| 95% of requests within 1 s at 100 incidents (REQ-15) | **Yes**, deployed | 2026-10-18: 200/200 within 1 s; p50 48 ms, p95 61 ms (`scripts/performance.py`) |
+| Data kept across restarts until reset (REQ-15) | **Yes**, deployed (`f2b607c`; not re-run on `f551649`) | 2026-10-18: 100/100 incidents intact after a Cloud Run restart (new revision); all created IDs gave 404 after reset (`scripts/check_persistence.py`) |
+| 95% of requests within 1 s at 100 incidents (REQ-15) | **Yes**, deployed (`f2b607c`; not re-run on `f551649`) | 2026-10-18: 200/200 within 1 s; p50 48 ms, p95 61 ms (`scripts/performance.py`) |
 | Deployed over HTTPS (REQ-13) | **Yes** | https://incident-api-356019173418.us-central1.run.app; AC-14 `test_deployment_uses_https` passes; `http://` redirects to `https://` |
 
 ## Our choices where the contract is silent
@@ -948,155 +1191,7 @@ so both implementations behave the same (see `docs/contract-issues.md`).
   repeatable.
 ```
 
-### `docs/submission/q4-automated-validation.md`
-
-```markdown
-# Q4 Automated validation (draft)
-
-Lead: Mohit. Detailed results: `docs/test-results/`. Requirement mapping: `docs/test-results/traceability.md`.
-
-## What runs, and where
-
-| Layer | Location | Count | Needs |
-| --- | --- | --- | --- |
-| Unit tests (schemas, routes, repository) | `tests/unit/` | 81 | Nothing |
-| Infrastructure tests (auth, errors, logging, database, migrations, course testing interface) | `tests/infrastructure/` | 63 | A disposable PostgreSQL for the database tests (`TEST_DATABASE_URL`) |
-| Fixture checks (shared JSON cases follow the contract's field rules) | `tests/fixtures/` | 31 | Nothing |
-| Script self-tests | `tests/scripts/` | 7 | Nothing |
-| Tester service tests (Srihari) | `tests/tester/` | 25 | Nothing |
-| HTTP client self-tests | `tests/acceptance/test_client_selftest.py` | 5 | Nothing |
-| **Acceptance suite** (AC-01 to AC-05, AC-14, plus `/health` and `/reset`) | `tests/acceptance/`, marker `acceptance` | 48 | `BASE_URL`, `API_KEY`. Reset tests also need `ALLOW_DESTRUCTIVE_TESTS=1` |
-| **AC-16 scripts** (restart persistence, reset, response time) | `scripts/check_persistence.py`, `scripts/performance.py` | — | `BASE_URL`, `API_KEY`. The restart happens between the `create` and `verify` steps |
-
-Our deployed tester (https://incident-tester-356019173418.us-central1.run.app, Srihari) wraps the same suite behind the course testing interface (`POST /test/setup`, `POST /test/run`, `GET /test/report`); see `docs/cross-team-testing.md`. The acceptance suite only talks HTTP to a base URL, so the same tests run against a local app, CI, our deployment, or the other team's deployment. The shared inputs are plain JSON in `tests/fixtures/data/`.
-
-## Continuous integration
-
-`.github/workflows/ci.yml` runs on every push to `main` and `integration`, and on every pull request:
-
-1. Static checks: `ruff check`, `ruff format --check`, `mypy` (strict).
-2. The 212 non-acceptance tests, against a disposable PostgreSQL service.
-3. Migrates and starts the app inside the job, then runs the 48 acceptance tests against it with a throwaway key.
-4. AC-16 smoke test: creates 100 incidents, restarts the app, verifies them, resets, then runs the response-time check.
-
-Latest run on `integration` (`c4b6643`, 2026-10-19 UTC): all green. 212 passed; acceptance 47 passed, 1 skipped (the HTTPS check skips for a local target); 100/100 persisted; 200/200 within 1 s. CI never calls a deployed service.
-
-## Results
-
-| Date | Target | Acceptance | Persistence | Response time |
-| --- | --- | --- | --- | --- |
-| 2026-10-16 | Local Docker Compose | 47 passed, 1 skipped (HTTPS) | 100/100 after app and full-stack restarts | 200/200 within 1 s, p95 16 ms (loopback) |
-| 2026-10-18 | Our deployment (Cloud Run) | **48 passed**, 0 skipped | **100/100** after a revision restart; all removed by reset | **200/200 within 1 s**, p95 61 ms |
-| 2026-10-18 | Our deployment (`f551649`), through our deployed tester | **48 pass**; code coverage 135/522 lines; 8/16 ACs exercised | — | — |
-
-Details: [local run](../test-results/2026-10-16-local-ac16.md), [deployed run](../test-results/2026-10-18-deployed.md).
-
-## How we know the tests catch real failures
-
-- Against a build without the incident/evidence routes, 33 of the 35 AC-01 to AC-05 tests failed. The 2 that passed are unknown-ID 404 checks, which a missing route also satisfies.
-- Before the service existed, the AC-14 tests passed against a small stub that checks keys, and failed against the bare scaffold.
-- Each AC-02 / AC-05 invalid case asserts a 400 whose message names the bad field, and checks that nothing was created or attached.
-
-## Gaps
-
-- **AC-02 count check and AC-16 "no incidents remain"** need `GET /incidents`, which isn't in the pod contract (`docs/contract-issues.md` #2). For now we check each created ID individually.
-- **Length boundaries** wait on agreed limits (`docs/contract-issues.md` #3). Our placeholders are `title` ≤ 200 and `description` ≤ 5000.
-- **Phase 4 criteria** (decisions, deadlines, filing, 409 state rules) have no tests yet, because the endpoints don't exist.
-- The keyed deployed run was done by Srihari using Mohit's suite. Mohit's own deployed checks so far are the keyless ones (health, HTTPS redirect, 401s).
-```
-
-### `docs/submission/q6-cross-team-readiness.md`
-
-```markdown
-# Q6 Cross-team readiness
-
-Lead: Mohit. Working checklist and raw results: `docs/test-results/cross-team.md`.
-
-Both teams built from the same specification, the Phase 2 pod contract v1.0. The other team's service publishes its copy at `/openapi.yaml`. It lists the same operations, fields and rules we built from, so neither team has added anything to the shared interface.
-
-## Testing in both directions
-
-| Direction | What happened | Result |
-| --- | --- | --- |
-| Our tests → their service (https://incident-clock.onrender.com) | 2026-10-18: our acceptance suite, run non-destructively | **45 passed, 0 failed, 3 skipped.** The skips are the `/reset` tests, left out on purpose so we didn't wipe their data. [Details](../test-results/2026-10-18-cross-team-ours-on-theirs.md) |
-| Their tests → our service (https://incident-api-356019173418.us-central1.run.app) | Their tester (https://incident-clock-tester.onrender.com) uses the course testing interface. Our system added `/test/setup` and `/test/report` on 2026-10-18 (`f551649`). We gave them our URLs and, privately, a key | **Not run yet.** Waiting for their tester to target us |
-| Our tester → our service (check of the interface) | 2026-10-18: our deployed tester (https://incident-tester-356019173418.us-central1.run.app) ran a full session against our system | **48 pass**; code coverage 135/522 lines; 8/16 ACs exercised (`docs/cross-team-testing.md`) |
-| Our tester → their service | Needs their key in our Secret Manager and their URL in the tester's approved list | **Not run yet** |
-
-Our suite only checks the outside behaviour of an operation, so the 45 passes are evidence that their AC-01 to AC-05 and AC-14 behaviour matches the contract as we read it. That includes AC-14's HTTPS check. They aren't evidence about AC-16 (persistence, reset, response time), which we haven't run against them.
-
-## Specification ambiguities and their status
-
-| Topic | What the contract says | Our service | Their service | Status |
-| --- | --- | --- | --- | --- |
-| Course testing interface (`/test/setup`, `/test/report`) | Defined by the course's "Cross-team Testing Interface" spec, not the pod contract | Implemented (Srihari) | Implemented | Both sides have it. Session semantics: one active session; setup resets data; a reused ID is 409. Errors on `/test/*` use `{message, source}` |
-| `GET /incidents` (issue #2) | Not defined, though AC-02 and AC-16 refer to listing incidents | Not implemented (405) | Not in their spec | Both left it out, so the services agree. The AC-02 count check and AC-16's "no incidents remain" are checked one ID at a time instead |
-| Field length limits (issue #3) | Not specified | Title ≤ 200, description ≤ 5000 (placeholders) | Only "not empty"; maximums left open | **Open.** Longer valid input would be accepted by them and rejected by us with a 400 |
-| Unknown extra fields | Not specified | Ignored | Not specified in their spec | Unconfirmed. No failures seen |
-| Error code names | Only `{error, message}` is required | `UNAUTHORIZED`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_<FIELD>` | `UNAUTHORIZED`, `NOT_FOUND` seen; also `INVALID_SESSION_ID` | Our tests check the shape, not the exact code. Unconfirmed whether their tests check exact codes |
-| Health body | `{status: string}` | `"OK"` | `"ok"` | Both are valid |
-| Reset coordination | `/reset` clears all data | — | — | **Open.** No time window has been agreed for destructive runs in either direction |
-
-## Still open
-
-These are recorded as they stand at submission, not as resolved.
-
-- Their tester's run against our system, and our tester's run against theirs (their key into Secret Manager, their URL into `ALLOWED_TARGETS`).
-- Agree length limits and the reset window with the other team, then run our `/reset` tests and AC-16 scripts against them.
-- Record their results against our service, including failures and who owns each one, once they can run.
-```
-
-### `docs/submission/q7-status-and-limitations.md`
-
-```markdown
-# Q7 Status and limitations
-
-Consolidated by Mohit from the Q2–Q6 sections and `docs/test-results/`. Srihari and Astha: please check the lines about your areas.
-
-## Current status (2026-10-18)
-
-- **Delivered:** every Phase 3 operation in the pod contract: `GET /health`, `POST /incidents`, `GET /incidents/{id}`, `POST /incidents/{id}/evidence`, `POST /reset`. They're backed by PostgreSQL, with API-key auth, `{error, message}` errors and 405 for edits and deletes.
-- **Deployed:** Google Cloud Run with Cloud SQL, over HTTPS, at https://incident-api-356019173418.us-central1.run.app. The running commit is shown in the `X-App-Commit` header.
-- **Validated:**
-  - 48/48 acceptance tests passed against the deployment.
-  - 100/100 incidents were intact after a restart.
-  - 200/200 requests completed within 1 s (p95 61 ms).
-  - CI runs static checks, 170 unit/infrastructure tests, the acceptance suite and an AC-16 smoke test on every push.
-- **Course testing interface:** our system has `POST /test/setup` and `GET /test/report`, and our tester is deployed at https://incident-tester-356019173418.us-central1.run.app. A full session against our system gave 48 pass, code coverage 135/522 lines, 8/16 ACs (Srihari, `docs/cross-team-testing.md`).
-- **Cross-team:** our suite passed 45/45 against the other team's service. Their tester hasn't run against ours yet, and our tester hasn't run against theirs (see Q6).
-
-## Changes from the Phase 2 plan
-
-- **Specification source:** no instructor OpenAPI file was available, so we built from the Phase 2 pod contract v1.0. The other team did the same (`docs/contract-issues.md` #1).
-- **Hosting:** Google Cloud Run and Cloud SQL, chosen and run by Srihari (`docs/deployment.md`).
-- **Precedence where the contract is silent:** the API key is checked before routing, validation or lookup (`docs/contract-issues.md` #4).
-- **AC-16 checks are scripts, not pytest tests:** a service restart happens partway through, so they're `scripts/check_persistence.py` and `scripts/performance.py`.
-
-## Unfinished scope
-
-- **Phase 4 operations:** decisions, corrections, deadline status, filing and timeline. Not implemented, and 409 state rules aren't exercised yet.
-- **Tester runs across teams:** neither tester has run against the other team's system yet.
-- **Component coverage** is reported as null, because the pod spec defines no component list.
-- **`GET /incidents`** isn't in the contract (issue #2). AC-02's count check and AC-16's "no incidents remain" are checked per ID instead.
-- **Length limits:** placeholders (title 200, description 5000) until the pod agrees (issue #3), so boundary tests aren't written.
-- **Destructive cross-team runs:** our `/reset` tests and AC-16 scripts haven't run against the other team. No reset window has been agreed.
-
-## Known defects and risks
-
-- **Clock-sensitive database test:** `tests/infrastructure/test_feature_database.py` compares a database timestamp with the test machine's clock. It failed once locally because a Docker database clock was a few seconds off. It passes in CI. It needs a small tolerance (Astha).
-- **One client-side timeout:** during the first deployed persistence run, one request timed out at 10 s. Cloud Run's logs showed no request slower than 0.36 s, so it was most likely the network path. The run was repeated and passed (Q2).
-- **Coverage is per instance and in memory:** the service runs `max-instances 1` so a session's coverage stays on one instance, and a restart clears it (Srihari).
-- **`HEAD /health` returns 405.** Only `GET` is in the contract, so this is not a contract defect, but some uptime checkers use `HEAD`.
-- **Synthetic data on the other team's service:** our non-destructive run left test incidents in their database.
-
-## Adjustments for Phase 4
-
-1. Run both teams' testers against each other's systems and record the results.
-2. Settle issues #2 and #3 with the other team, then add length-boundary tests and, if agreed, a list check.
-3. Implement decisions, corrections, deadline status, filing and timeline. Extend the shared fixtures and acceptance suite with the AC criteria for them, including 409 state rules.
-4. Agree a reset window and run both teams' destructive tests and AC-16 in both directions.
-5. Add a timestamp tolerance to the clock-sensitive database test.
-```
+The Q4, Q6 and Q7 drafts contain the same text as the matching sections of `mohit-gradescope-ready.md` above.
 
 ## Part 9: Test-result records as committed
 
@@ -1114,8 +1209,9 @@ Record real runs only. For each run, include: commit/tag, date, target (local, o
 | Date | Target | Result |
 | --- | --- | --- |
 | 2026-10-16 | Local Docker Compose (`f6b8df6`) | [AC-16 and acceptance, all passing](2026-10-16-local-ac16.md) |
-| 2026-10-18 | Our deployment (`ed5f449` / `f2b607c`) | [48/48 acceptance, 100/100 persisted, 200/200 under 1 s](2026-10-18-deployed.md) |
-| 2026-10-18 | Other team's deployment (incident-clock) | [Our suite: 45 passed, 0 failed, 3 skipped (reset, on purpose)](2026-10-18-cross-team-ours-on-theirs.md) |
+| 2026-10-18 | Our deployment, earlier versions (`ed5f449` / `f2b607c`) | [48 passed acceptance; 100/100 persisted; 200/200 under 1 s](2026-10-18-deployed.md) |
+| 2026-10-18 | Our deployment, final version `f551649` | [Tester run by Srihari: 48 pass. Keyless subset by Mohit: 7 passed, 41 skipped. AC-16 not re-run](2026-10-18-deployed-f551649.md) |
+| 2026-10-18 | Other team's deployment (incident-clock) | [Our suite: 45 passed, 0 failed, 3 skipped (reset tests, on purpose)](2026-10-18-cross-team-ours-on-theirs.md) |
 
 CI also runs the acceptance suite and an AC-16 smoke test (persistence across an app restart, reset, response time) against an app inside the CI job on every push. Those runs are regression checks, not recorded results.
 ```
@@ -1125,23 +1221,27 @@ CI also runs the acceptance suite and an AC-16 smoke test (persistence across an
 ```markdown
 # Requirement / test traceability
 
-Owner: Mohit. Feeds submission Q4. Status covers local, CI and deployed runs. Each run is recorded in this folder.
+Owner: Mohit. Feeds submission Q4.
 
-| Criterion | Planned coverage (README §5) | Tests | Status |
-| --- | --- | --- | --- |
-| AC-01 – AC-04 | Incident create/retrieve workflow, including success, failure, and boundary cases | Fixtures: `tests/fixtures/data/incidents_*.json`, `evidence_valid.json` and `test_ac01_05_incidents_evidence.py` | Written. All pass locally and against the deployment. Length boundaries wait on issue #3. AC-02's count check waits on issue #2 |
-| AC-02 | Includes listing incidents | — | Blocked: `GET /incidents` existence (issue #2) |
-| AC-03 (GET half) | Unknown incident ID returns 404 with error code and message | `test_system_endpoints.py::test_unknown_incident_get_is_404_with_error_format` | GET half passes against the app run locally and in CI. POST half is in `test_ac01_05_incidents_evidence.py` |
-| AC-05 | Evidence attachment, where the increment supports it | Fixtures: `tests/fixtures/data/evidence_*.json` and `test_ac01_05_incidents_evidence.py` | Written. All pass locally and against the deployment |
-| AC-14 | Public health endpoint | `test_ac14_security.py::test_health_is_public` | Passes locally, in CI and against the deployment ([2026-10-18](2026-10-18-deployed.md)) |
-| AC-14 | Missing / wrong / valid API key | `test_ac14_security.py::test_authenticated_route_*` | Passes against the app run locally and in CI; assumes auth before 404 (issue #4) |
-| AC-14 | HTTPS deployment | `test_ac14_security.py::test_deployment_uses_https` | Passes against the deployment ([2026-10-18](2026-10-18-deployed.md)); skips for local targets |
-| AC-16 | Reset | `test_system_endpoints.py::test_reset_*` (destructive, opt-in); `scripts.check_persistence reset` (each created ID returns 404 afterwards); Srihari's `tests/infrastructure/test_database.py` | Passes locally ([2026-10-16 run](2026-10-16-local-ac16.md)) and in CI. "No incidents remain" is checked per ID until issue #2 is settled |
-| AC-14 | Errors use `{error, message}` | `test_system_endpoints.py::test_401_uses_error_format` | Passes against the app run locally and in CI |
-| AC-16 | Restart persistence | `scripts.check_persistence create` / restart / `verify` | 100/100 intact after an app restart and after a full stack restart, run locally ([2026-10-16](2026-10-16-local-ac16.md)). In CI after an app restart. Deployed: 100/100 after a Cloud Run revision restart ([2026-10-18](2026-10-18-deployed.md)) |
-| AC-16 | Response time (100 incidents, 200 requests) | `scripts.performance` | 100% within 1 s, run locally ([2026-10-16](2026-10-16-local-ac16.md)). Smoke run in CI. Deployed: 200/200 within 1 s, p95 61 ms ([2026-10-18](2026-10-18-deployed.md)) |
+This table covers local, CI and deployed runs, and each run is recorded in this folder. "Final" means the deployed commit `f551649`. "Earlier" means `ed5f449` (acceptance) or `f2b607c` (AC-16).
 
-Before any service existed, the AC-14 tests were checked two ways. Against a throwaway local stub with `/health` and key checking, they passed (HTTPS check skipped). Against the current scaffold, which has no routes, they failed as expected. Neither run is a result for the real service.
+| Criterion | Tests | Status |
+| --- | --- | --- |
+| AC-01 (REQ-01, REQ-14) | `test_ac01_create_then_retrieve_returns_identical_values[4]`, `test_ac01_each_incident_gets_a_distinct_id` | Pass: CI, earlier, and final (via tester) |
+| AC-02 (REQ-02, REQ-14) | `test_ac02_invalid_incident_is_rejected_naming_the_field[10]` (black box: 400 naming the field) | Pass: CI, earlier, final (via tester) |
+| AC-02 "count unchanged" | No list route (issue #2). DB-level evidence: `tests/infrastructure/test_feature_database.py::test_postgres_invalid_incidents_do_not_write` (PostgreSQL row counts stay 0), `tests/unit/test_incidents.py::test_missing_fields_leave_no_records`, `test_invalid_input_no_write` | DB tests pass in CI. Not checkable over HTTP until issue #2 is settled |
+| AC-02 max length | Waits on issue #3. Only our placeholder (title > 200) is tested at DB level | Open |
+| AC-03 (REQ-14) | `test_ac03_unknown_id_get_and_post_return_404[2]`, `test_unknown_incident_get_is_404_with_error_format[2]` | Pass: CI, earlier, final (via tester) |
+| AC-04 (REQ-03) | `test_ac04_three_technical_items_are_linked_to_the_incident`, `test_ac04_evidence_is_not_shared_between_incidents` | Pass: CI, earlier, final (via tester) |
+| AC-05 (REQ-03) | `test_ac05_evidence_is_stored_and_returned_unchanged[6]`, `test_invalid_evidence_is_rejected_and_not_attached[7]` | Pass: CI, earlier, final (via tester) |
+| AC-08, REQ-07 half only | `test_stored_incident_cannot_be_edited_or_deleted[PUT, PATCH, DELETE]` | Pass. Correction history (REQ-06) isn't implemented or tested, so AC-08 as a whole isn't met |
+| AC-14 (REQ-13) | `test_health_is_public`, `test_health_body_has_status`, `test_authenticated_route_rejects_bad_key[missing, wrong]`, `test_authenticated_route_accepts_valid_key`, `test_401_uses_error_format[2]`, `test_deployment_uses_https` | Pass: CI (HTTPS skipped), earlier, final via tester, and final keyless by Mohit (7 passed) |
+| AC-16 reset | `test_reset_requires_key[2]`, `test_reset_succeeds_and_is_repeatable` (destructive, opt-in); `scripts.check_persistence reset` | Pass: CI, earlier, final (via tester). Per-ID 404 checks only cover the IDs we created. Table-level proof is `tests/infrastructure/test_database.py::test_reset_clears_everything_and_restarts_ids` (CI) |
+| AC-16 restart persistence | `scripts.check_persistence create` / restart / `verify` | Local 100/100 (app and full stack). CI 100/100. Earlier `f2b607c` 100/100. **Not run on final** |
+| AC-16 response time | `scripts.performance` (200 requests, 100 incidents) | Local 200/200. CI 200/200 (loopback). Earlier `f2b607c` 200/200, p95 61 ms. **Not run on final** |
+| AC-06, 07, 09 to 13, 15 | None | Phase 4/5 operations not implemented |
+
+Before any service existed, the AC-14 tests were checked two ways. Against a throwaway local stub with `/health` and key checking, they passed (HTTPS check skipped). Against the bare scaffold with no routes, they failed as expected. Later, against a build without the incident routes, 33 of 35 AC-01 to AC-05 tests failed. The 2 that passed are 404 checks, which a missing route also satisfies.
 ```
 
 ### `docs/test-results/2026-10-16-local-ac16.md`
@@ -1180,7 +1280,9 @@ Owner: Mohit. **Target: a local Docker Compose stack, not a deployment.** These 
 ### `docs/test-results/2026-10-18-deployed.md`
 
 ```markdown
-# 2026-10-18: acceptance and AC-16 runs against our deployment
+# 2026-10-18: acceptance and AC-16 runs against earlier deployments (`ed5f449`, `f2b607c`)
+
+These are **not** the final version. For `f551649`, see [2026-10-18-deployed-f551649.md](2026-10-18-deployed-f551649.md).
 
 Owner: Mohit. **Target: our deployed service**, https://incident-api-356019173418.us-central1.run.app (Google Cloud Run + Cloud SQL, see `docs/deployment.md`).
 
@@ -1191,7 +1293,7 @@ The suite and scripts are Mohit's (`tests/acceptance/`, `scripts/`). Srihari ran
 | | |
 | --- | --- |
 | Date | 2026-10-18 |
-| Server code | Acceptance suite: `ed5f449` (`integration`). Persistence and performance: `f2b607c`, which has the same API. The only change between them is the `/docs` Authorize button |
+| Server code | Acceptance suite: `ed5f449` (`integration`). Persistence and performance: `f2b607c`. The incident and evidence routes are the same in both; `ed5f449` adds deployment scripts, `X-App-Commit` and the `/docs` Authorize button |
 | How the commit was checked | `X-App-Commit` response header |
 | Client | A laptop over the public internet, so network latency is included |
 
@@ -1201,10 +1303,10 @@ The suite and scripts are Mohit's (`tests/acceptance/`, `scripts/`). Srihari ran
 | --- | --- | --- |
 | Acceptance suite | `pytest -m acceptance` with `ALLOW_DESTRUCTIVE_TESTS=1` | **48 passed**, 0 failed, 0 skipped. The HTTPS check ran and passed |
 | Restart persistence | `check_persistence create` (100 incidents), new Cloud Run revision (`incident-api-00002-msv` → `incident-api-00003-ggj`), then `verify` | **100/100 intact** |
-| Reset | `check_persistence reset` | All 100 removed |
+| Reset | `check_persistence reset` | All 100 created IDs return 404. This doesn't prove no other records remain; see the caveats |
 | Response time | `scripts.performance`: 100 incidents, 200 sequential requests | **200/200 within 1 s** (target 95%), 0 errors. p50 48 ms, p95 61 ms, max 76 ms |
 
-On the first persistence run, one request hit the client's 10 s timeout, so the run was repeated. Cloud Run's logs for that period show no request slower than 0.36 s, which points to the network path rather than the service. It didn't happen again.
+On the first persistence run, one request hit the client's 10 s timeout, so the run was repeated. Cloud Run's logs for that period show no request slower than 0.36 s, which suggests a network delay rather than the service. That wasn't confirmed. It didn't happen again.
 
 ## Spot checks without the key (run by Mohit, 2026-10-18)
 
@@ -1218,9 +1320,54 @@ On the first persistence run, one request hit the client's 10 s timeout, so the 
 
 ## Caveats
 
-- "No incidents remain after reset" is still checked per ID, because there's no list route (`docs/contract-issues.md` #2).
+- "No incidents remain after reset" is only checked for the IDs the script created, because there's no list route (`docs/contract-issues.md` #2). The proof that tables are empty after a reset is the DB-level test `tests/infrastructure/test_database.py::test_reset_clears_everything_and_restarts_ids`, which runs in CI.
 - Response times come from one laptop at one time of day. They show the target is met with plenty of margin, not what every client will see.
 - Mohit hasn't run the keyed suite himself yet. That needs the key from Srihari over a private channel.
+```
+
+### `docs/test-results/2026-10-18-deployed-f551649.md`
+
+```markdown
+# 2026-10-18: results against the final deployment `f551649`
+
+Owner: Mohit. **Target: our deployed system**, https://incident-api-356019173418.us-central1.run.app, reporting `X-App-Commit: f551649` before and after the run.
+
+## 1. Full suite through our deployed tester (run by Srihari)
+
+Srihari ran Mohit's acceptance suite against `f551649` through our tester (https://incident-tester-356019173418.us-central1.run.app), using the course testing interface. The source is `docs/cross-team-testing.md`, "Live check".
+
+| | |
+| --- | --- |
+| Date | 2026-10-18 (exact time not recorded) |
+| Steps | `POST /test/setup` (resets the system), `POST /test/run`, `GET /test/report` |
+| Tests | 48 acceptance tests, reset tests included |
+| Result | **48 pass, 0 fail** |
+| Code coverage | 135 of 522 lines of the `app` package, taken from the system's `/test/report` |
+| Component coverage | null; the pod spec defines no component list |
+| System coverage | 8 of 16 ACs had at least one test run: AC-01, 02, 03, 04, 05, 08, 14, 16. "Exercised" doesn't mean fully satisfied. AC-08 only covers the REQ-07 edit/delete half, and AC-16 only covers the reset tests, not restart or timing |
+
+## 2. Keyless subset (run by Mohit)
+
+| | |
+| --- | --- |
+| Date | 2026-10-18 21:55 EDT (2026-10-19 01:55 UTC) |
+| Suite commit | `a520f25` (`integration`) |
+| Command | `BASE_URL=https://incident-api-356019173418.us-central1.run.app uv run pytest -m acceptance` with `API_KEY` unset and `ALLOW_DESTRUCTIVE_TESTS` unset |
+| Result | **7 passed, 0 failed, 41 skipped** |
+
+The 7 that passed:
+- `test_health_is_public`
+- `test_health_body_has_status`
+- `test_authenticated_route_rejects_bad_key[missing]` and `[wrong]`
+- `test_401_uses_error_format` (2)
+- `test_deployment_uses_https`
+
+39 tests skipped because they need a valid key, and 2 because they're destructive. Mohit had no authorized key on his machine: there's no `.env` and no `gcloud`.
+
+## 3. Not run on `f551649`
+
+- **AC-16 restart persistence and the 200-request timing script.** They need the key, a Cloud Run revision restart and a reset, and Srihari coordinates all three (`docs/deployment.md`, "Restart").
+- The latest AC-16 deployed results are from `f2b607c` (`2026-10-18-deployed.md`). There are code changes between `f2b607c` and `f551649`: the course testing interface, migration 0002, coverage instrumentation, and max instances changed to 1. The incident and evidence routes are unchanged. CI's AC-16 smoke run on `f551649` passed (run 39182054445: 100/100, 200/200 within 1 s on loopback), but CI runs without `APP_COVERAGE`, so it says nothing about the instrumentation's cost when deployed.
 ```
 
 ### `docs/test-results/2026-10-18-cross-team-ours-on-theirs.md`
@@ -1267,7 +1414,7 @@ Owner: Mohit. Both directions have to be attempted and recorded, including failu
 
 - [x] Their deployed HTTPS base URL: https://incident-clock.onrender.com (tester: https://incident-clock-tester.onrender.com).
 - [x] A shared synthetic test API key, exchanged privately. Never put it in git, chat screenshots or the report.
-- [ ] An agreed time window for runs that call `POST /reset`, so neither team wipes the other mid-run.
+- [ ] A written schedule for runs that call `POST /reset` or `/test/setup`. None exists yet. The 2026-10-18 tester runs happened without one.
 - [ ] Their position on the open contract questions: `GET /incidents` (issue #2) and length limits (issue #3).
 
 ## What we give them
@@ -1292,7 +1439,8 @@ Record each run in this folder with the date, their commit or version if they sh
 | Direction | Status |
 | --- | --- |
 | Our tests → their service | Non-destructive run 2026-10-18: [45 passed, 0 failed, 3 reset tests skipped](2026-10-18-cross-team-ours-on-theirs.md). Reset tests and AC-16 wait for an agreed window |
-| Their tests → our service | Our system now has `/test/setup` and `/test/report` (Srihari, `f551649`). Waiting for their tester to run against us |
+| Their tests → our service | **Pending.** Our system has `/test/setup` and `/test/report` (`f551649`). No report from their tester exists yet |
+| Our tester → their service | Done 2026-10-18 by Srihari: **48 pass, 0 fail, 0 skipped**; code 325/406 (their basis), system 8/16. See `docs/cross-team-testing.md` |
 ```
 
 ## Part 10: Contract issues and the cross-team testing interface
@@ -1435,9 +1583,23 @@ Our tester against our deployed system:
 - Report before the run: `409`.
 - Run: `200` in 5.9 s. **48 pass** with unique test IDs. Coverage: code 135/522
   lines, component null with a reason, system 8/16 (AC-01, 02, 03, 04, 05, 08, 14, 16).
+  "System" counts ACs with at least one test run, not ACs fully met: AC-08 is
+  only its REQ-07 edit/delete half, and AC-16 is only the reset tests.
 - Running again: `409`. The stored report matches the run response.
 - Non-approved target: `400`.
 - Our system's `/test/setup` without a key: `401` with `source: system`.
+
+## Cross-team run: our tester against the other team's system (2026-10-18)
+
+Target: https://incident-clock.onrender.com, key stored in Secret Manager
+(`tester-target-keys`). Session `7c8dd57b-c179-48f1-8a92-465b4d8063be`.
+
+- Setup: `201` in 0.8 s. Run: `200` in 9.9 s. **48 pass**, nothing failed or skipped.
+  The stored report matches the run response.
+- Coverage:
+  - code: 325/406 lines, reported by their system; their basis counts lines run at import as executed, ours doesn't, so the two numbers can't be compared directly
+  - component: null
+  - system: 8/16
 ```
 
 ## Part 11: CI workflow source
@@ -1558,8 +1720,6 @@ jobs:
 ```
 
 ## Part 12: Acceptance suite source (the test files)
-
-The HTTP client (`tests/acceptance/client.py`) and fixtures (`conftest.py`) are in the repo. These are the files that make the assertions.
 
 ### `tests/acceptance/assertions.py`
 
@@ -2129,7 +2289,7 @@ Use synthetic data only. No real incident data and no credentials.
 
 ## Part 15: The other team's published contract (excerpt)
 
-Fetched by Mohit on 2026-10-18 from `https://incident-clock.onrender.com/openapi.yaml` (433 lines; it needs their key, which isn't reproduced here). Below: the header verbatim, every operation and summary, and the schemas relevant to Q6. Note that there is no `GET /incidents`, no `/test/*`, and title/description have `minLength: 1` with the max left open.
+Fetched by Mohit on 2026-10-18 from `https://incident-clock.onrender.com/openapi.yaml` (433 lines; the key isn't reproduced). There's no `GET /incidents` and no `/test/*`, and title/description have `minLength: 1` with the max left open.
 
 ```yaml
 openapi: 3.1.0
@@ -2155,7 +2315,7 @@ security:
   - ApiKey: []
 
 
-paths:  # operations only (full file has responses for each)
+paths:  # operations only
   /health:
     get:
       summary: Checks that the service is running.

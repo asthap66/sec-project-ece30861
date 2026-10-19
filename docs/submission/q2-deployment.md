@@ -9,8 +9,9 @@ Operating details: `docs/deployment.md`.
   `ece30861-project-62ca4b`, region `us-central1`.
 - **Runtime:** one Docker image (`Dockerfile`): Python 3.12, FastAPI served by
   Uvicorn, dependencies installed from the locked `uv.lock`, running as a
-  non-root user. 1 vCPU, 512 MiB, min 1 / max 2 instances. One instance is kept
-  warm so no request waits for a cold start (REQ-15).
+  non-root user. 1 vCPU, 512 MiB, min 1 / max 1 instances (`scripts/deploy_gcp.sh`
+  since `6d88509`, so a test session's in-memory coverage stays on one
+  instance). One instance is kept warm so no request waits for a cold start (REQ-15).
 - **Database:** Cloud SQL for PostgreSQL 16 (`db-f1-micro`, 10 GB SSD),
   connected through Cloud Run's built-in Cloud SQL connector. It is separate
   from the app, so app restarts and redeploys don't touch the data.
@@ -40,9 +41,11 @@ curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i 
   (`/test/setup`, `/test/report`); our tester ran all 48 acceptance tests
   against it, all passing (`docs/cross-team-testing.md`). The previous
   deployment, `ed5f449`, also passed 48 acceptance tests.
-  The persistence and performance runs below were against the previous
-  deployment, `f2b607c`, which had the same API (the only change since is the
-  /docs Authorize button).
+  The persistence and performance runs below were against an earlier
+  deployment, `f2b607c`. The incident and evidence routes are the same, but
+  `f551649` also adds the testing interface, migration 0002, coverage
+  instrumentation and max instances 1. AC-16 hasn't been re-run on `f551649`
+  (`docs/test-results/2026-10-18-deployed-f551649.md`).
 
 ## Secrets
 
@@ -71,19 +74,19 @@ curl -sI https://incident-api-356019173418.us-central1.run.app/health | grep -i 
   incidents intact**. `reset` then removed all 100.
 - Local check (2026-10-16): the same behaviour with `docker compose restart app`.
 
-## Validation against the deployment (2026-10-18)
+## Validation against earlier deployments (2026-10-18: acceptance on `ed5f449`, AC-16 on `f2b607c`)
 
 | Check | Result |
 | --- | --- |
 | Acceptance suite (`pytest -m acceptance`, AC-01 to AC-05, AC-14) | **48 passed**, 0 failed, 0 skipped |
-| Restart persistence (AC-16) | 100/100 incidents intact after restart; 0 after reset |
+| Restart persistence (AC-16) | 100/100 incidents intact after restart; all 100 created IDs gave 404 after reset |
 | Performance (AC-16): 100 incidents loaded, 200 sequential requests from a laptop | **200/200 within 1 s** (needs 95%); p50 48 ms, p95 61 ms, max 76 ms; 0 errors |
 
 One unexplained event: on the first persistence run, one request timed out on
 the client side (10 s), so that run was repeated. Cloud Run's request logs for
-that period show no request slower than 0.36 s, so the delay was most likely on
-the network path between the laptop and Google, not in the service. It did not
-recur.
+that period show no request slower than 0.36 s, which suggests a delay on the
+network path between the laptop and Google rather than in the service. That
+wasn't confirmed. It did not recur.
 
 ## Logging
 
@@ -111,7 +114,7 @@ evidence, get it, and a delete attempt (405).
 
 - **Class registry entry:** system base URL above; tester
   https://incident-tester-356019173418.us-central1.run.app (values in
-  `docs/cross-team-testing.md`). TODO: confirm submitted.
+  `docs/cross-team-testing.md`). Submitted (confirmed by the team, 2026-10-18).
 - **Test runner:** `tests/acceptance/` (Mohit). Run with
   `BASE_URL=<url> API_KEY=<key> uv run pytest -m acceptance`.
 - **Docs:** `docs/deployment.md` (operating the deployment), `docs/setup.md`
