@@ -50,7 +50,6 @@ The incident and evidence routes are the same, but this isn't a docs-only differ
 | L6 | `test_feature_database.py` line 44 compares the DB clock with the host clock | Low (tests only) | Passes in CI. Failed locally once with a measured 3 to 4 s host/container clock gap | Phase 4 (Astha adds a tolerance) |
 | L7 | No enforced merge or deploy gate | Medium | Team habit of merging and deploying only green commits | Phase 4 (needs branch protection, which this private repo plan doesn't offer, or a public repo) |
 | L8 | `HEAD /health` gives 405 | Low | Use GET | Phase 4, if needed |
-| L9 | Hosting on Google Cloud while the course slide says AWS | Unknown, **NOT VERIFIED** | Ask the instructor | Before Phase 4 |
 
 ## Q7.3 Comparison with the Phase 4 plan and changes needing pod agreement
 

@@ -114,7 +114,7 @@ evidence, get it, and a delete attempt (405).
 
 - **Class registry entry:** system base URL above; tester
   https://incident-tester-356019173418.us-central1.run.app (values in
-  `docs/cross-team-testing.md`). TODO: confirm submitted.
+  `docs/cross-team-testing.md`). Submitted (confirmed by the team, 2026-10-18).
 - **Test runner:** `tests/acceptance/` (Mohit). Run with
   `BASE_URL=<url> API_KEY=<key> uv run pytest -m acceptance`.
 - **Docs:** `docs/deployment.md` (operating the deployment), `docs/setup.md`

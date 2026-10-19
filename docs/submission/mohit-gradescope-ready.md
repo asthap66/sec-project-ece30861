@@ -6,7 +6,7 @@ Sources: `docs/test-results/`, `docs/cross-team-testing.md`, `docs/contract-issu
 
 The exact Phase 3 rubric wording wasn't available locally. The subsections follow the team README (section 9) and the Phase 2 pod spec. Check each sentence limit against the Gradescope form before pasting.
 
-Items marked **PENDING** or **NOT VERIFIED** are not done. Don't paste them as if they were.
+Items marked **PENDING** are not done. The class registry entry was confirmed submitted by the team on 2026-10-18. Google Cloud hosting was confirmed acceptable. Don't paste them as if they were.
 
 ## Version facts used below
 
@@ -45,7 +45,6 @@ No instructor OpenAPI file was available, so both teams built from the Phase 2 p
 - **Length limits:** title ≤ 200 and description ≤ 5000 are our placeholders, not pod-approved values (issue #3).
 - **`/test/*` errors:** these use the course testing interface's `{message, source}` format, not the project API's `{error, message}` format.
 - **`HEAD /health` returns 405.** Only GET is in the contract.
-- **Hosting:** the course overview slide says "deployed to AWS" and we're on Google Cloud. **NOT VERIFIED** whether AWS is a hard requirement.
 
 ## Q4.2 AC-to-test mapping and expected outputs
 
@@ -181,7 +180,6 @@ On the first `f2b607c` persistence attempt, one request hit the client's 10 s ti
 | L6 | `test_feature_database.py` line 44 compares the DB clock with the host clock | Low (tests only) | Passes in CI. Failed locally once with a measured 3 to 4 s host/container clock gap | Phase 4 (Astha adds a tolerance) |
 | L7 | No enforced merge or deploy gate | Medium | Team habit of merging and deploying only green commits | Phase 4 (needs branch protection, which this private repo plan doesn't offer, or a public repo) |
 | L8 | `HEAD /health` gives 405 | Low | Use GET | Phase 4, if needed |
-| L9 | Hosting on Google Cloud while the course slide says AWS | Unknown, **NOT VERIFIED** | Ask the instructor | Before Phase 4 |
 
 ## Q7.3 Comparison with the Phase 4 plan and changes needing pod agreement
 

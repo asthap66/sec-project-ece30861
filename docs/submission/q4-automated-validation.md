@@ -38,7 +38,6 @@ No instructor OpenAPI file was available, so both teams built from the Phase 2 p
 - **Length limits:** title ≤ 200 and description ≤ 5000 are our placeholders, not pod-approved values (issue #3).
 - **`/test/*` errors:** these use the course testing interface's `{message, source}` format, not the project API's `{error, message}` format.
 - **`HEAD /health` returns 405.** Only GET is in the contract.
-- **Hosting:** the course overview slide says "deployed to AWS" and we're on Google Cloud. **NOT VERIFIED** whether AWS is a hard requirement.
 
 ## Q4.2 AC-to-test mapping and expected outputs
 

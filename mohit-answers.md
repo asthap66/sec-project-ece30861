@@ -54,6 +54,20 @@ Rules for anyone writing answers from it:
 
 ## Part 0: Facts at a glance
 
+### Submission readiness (2026-10-18, about 22:15 EDT)
+
+| Item | Status |
+| --- | --- |
+| Paste-ready Q4, Q6, Q7 answers | Done: `docs/submission/mohit-gradescope-ready.md` (merged via PR #11) |
+| Class registry entry | Submitted (confirmed by the team) |
+| Hosting on Google Cloud | Confirmed acceptable |
+| Our tester → other team's system | Done: 48 pass, 0 fail, 0 skipped (Srihari) |
+| Our suite → other team's system (direct) | Done: 45 passed, 0 failed, 3 skipped |
+| Their tester → our system | **PENDING.** They said they were running it; no report received. Q6.1 says pending |
+| AC-16 restart and timing on final `f551649` | **PENDING.** Not run; Q4.5 shows the earlier `f2b607c` results separately |
+
+Both pending items are disclosed honestly in the answers, so they don't block submitting. If either result arrives first, Q4.5 or Q6.1 should be updated with the real numbers.
+
 ### Team
 
 | Person | Role | Branch |
@@ -298,7 +312,7 @@ Grading note from the course overview slides: assessment includes "pod cross-tes
 
 **Changes from the Phase 2 plan.**
 - **Specification source:** the Phase 2 pod contract v1.0, because no instructor OpenAPI file was available (issue #1).
-- **Hosting:** Google Cloud Run and Cloud SQL. Note: the course overview slide says "deployed to AWS"; this should be checked with the instructor if it's a hard requirement.
+- **Hosting:** Google Cloud Run and Cloud SQL (confirmed acceptable for the course, 2026-10-18).
 - **Auth-first precedence:** the API key is checked before routing, validation or lookup (issue #4, matching Model 4).
 - **AC-16 as scripts, not pytest tests:** a restart has to happen between steps.
 - **Course testing interface added**, which wasn't in the Phase 2 pod contract: system `/test/*` endpoints and a deployed tester. The new `test_sessions` table comes in migration 0002.
@@ -309,7 +323,7 @@ Grading note from the course overview slides: assessment includes "pod cross-tes
 - Length limits are placeholders (issue #3), so there are no boundary tests.
 - Their tester's report against our system hasn't arrived, and cross-team AC-16 (restart and timing) hasn't been done in either direction.
 - Component coverage in tester reports is null, because the pod spec defines no component list.
-- The class registry entry was still marked "TODO: confirm submitted" in Q2.
+- The class registry entry is submitted (confirmed by the team, 2026-10-18).
 
 **Known defects and risks.**
 - **Clock-sensitive database test** (`test_feature_database.py` line 44) fails when the DB clock and the test host's clock disagree by a few seconds. Owner: Astha. Fix: add a tolerance.
@@ -325,7 +339,6 @@ Grading note from the course overview slides: assessment includes "pod cross-tes
 3. Implement the Phase 4 operations. Extend fixtures and the acceptance suite with their ACs, including 409 state rules and the `as_of` deadline checks.
 4. Agree a reset window; run destructive tests and AC-16 in both directions.
 5. Add a timestamp tolerance to the clock-sensitive test.
-6. Confirm the hosting requirement (AWS vs Google Cloud) and the registry submission.
 
 ### 3.3 Evidence map for Q7
 
@@ -406,6 +419,7 @@ a520f25 2026-10-18 Mohit Manna  Merge pull request #10 from asthap66/acceptance-
 50992d1 2026-10-18 Srihari Srikanth  Record the cross-team run against the other team's system
 306b55a 2026-10-18 Srihari Srikanth  Merge remote-tracking branch 'origin/integration' into integration
 18e79c3 2026-10-18 Mohit  Merge remote-tracking branch 'origin/integration' into acceptance-ci
+4179bc5 2026-10-18 Mohit  docs: record our tester's 48/48 run against the other team; update Q6/Q7
 ```
 
 ## Part 5: Live spot checks (raw HTTP observations)
@@ -752,7 +766,7 @@ Sources: `docs/test-results/`, `docs/cross-team-testing.md`, `docs/contract-issu
 
 The exact Phase 3 rubric wording wasn't available locally. The subsections follow the team README (section 9) and the Phase 2 pod spec. Check each sentence limit against the Gradescope form before pasting.
 
-Items marked **PENDING** or **NOT VERIFIED** are not done. Don't paste them as if they were.
+Items marked **PENDING** are not done. The class registry entry was confirmed submitted by the team on 2026-10-18. Google Cloud hosting was confirmed acceptable. Don't paste them as if they were.
 
 ## Version facts used below
 
@@ -791,7 +805,6 @@ No instructor OpenAPI file was available, so both teams built from the Phase 2 p
 - **Length limits:** title ≤ 200 and description ≤ 5000 are our placeholders, not pod-approved values (issue #3).
 - **`/test/*` errors:** these use the course testing interface's `{message, source}` format, not the project API's `{error, message}` format.
 - **`HEAD /health` returns 405.** Only GET is in the contract.
-- **Hosting:** the course overview slide says "deployed to AWS" and we're on Google Cloud. **NOT VERIFIED** whether AWS is a hard requirement.
 
 ## Q4.2 AC-to-test mapping and expected outputs
 
@@ -927,7 +940,6 @@ On the first `f2b607c` persistence attempt, one request hit the client's 10 s ti
 | L6 | `test_feature_database.py` line 44 compares the DB clock with the host clock | Low (tests only) | Passes in CI. Failed locally once with a measured 3 to 4 s host/container clock gap | Phase 4 (Astha adds a tolerance) |
 | L7 | No enforced merge or deploy gate | Medium | Team habit of merging and deploying only green commits | Phase 4 (needs branch protection, which this private repo plan doesn't offer, or a public repo) |
 | L8 | `HEAD /health` gives 405 | Low | Use GET | Phase 4, if needed |
-| L9 | Hosting on Google Cloud while the course slide says AWS | Unknown, **NOT VERIFIED** | Ask the instructor | Before Phase 4 |
 
 ## Q7.3 Comparison with the Phase 4 plan and changes needing pod agreement
 
@@ -1099,7 +1111,7 @@ evidence, get it, and a delete attempt (405).
 
 - **Class registry entry:** system base URL above; tester
   https://incident-tester-356019173418.us-central1.run.app (values in
-  `docs/cross-team-testing.md`). TODO: confirm submitted.
+  `docs/cross-team-testing.md`). Submitted (confirmed by the team, 2026-10-18).
 - **Test runner:** `tests/acceptance/` (Mohit). Run with
   `BASE_URL=<url> API_KEY=<key> uv run pytest -m acceptance`.
 - **Docs:** `docs/deployment.md` (operating the deployment), `docs/setup.md`
