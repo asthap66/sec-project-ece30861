@@ -31,8 +31,7 @@ Team documentation: GitHub `asthap66/sec-project-ece30861`, branch `integration`
 
 ## Q2.3 Operational experience supported by observability evidence
 
-<!-- Check the first sentence against our Phase 2 Section 7.3 wording before pasting. -->
-The Phase 2 plan of a managed PostgreSQL database, secrets kept out of the repository, and per-request logs was carried out as planned on Google Cloud. Persistent data is in Cloud SQL PostgreSQL, created by Alembic migrations at startup; `POST /reset` (API key required) truncates the evidence and incidents tables in one transaction and restarts IDs at INC-001/EVD-001. On deployment `f551649`, 100 incidents survived a restart into a new revision, and all were gone after reset (AC-16, 2026-10-19). The database URL and API key are stored in Google Secret Manager and injected as environment variables at start, never in git, images or logs; the key is compared in constant time, and a missing configured key rejects all requests. Our middleware writes one log line per request with a request ID, method, path, status, duration and record IDs (never headers or bodies) to Cloud Logging, and returns the ID in `X-Request-Id`, so a client failure can be matched to its line; 5xx counts and latency come from Cloud Run's request metrics. These logs are how we found that the other team's tester was resetting our database during our first AC-16 attempt (24 `POST /reset` calls from their IP during our create step).
+Our Phase 2 plan (pod spec Q5.3 with REQ-13 to REQ-15) was to deploy at our own HTTPS base URL, require the shared key in `X-API-Key`, keep data across restarts, and call `POST /reset` before each test run; all of this held in practice, except that shared resets turned out to need coordinating between teams. Persistent data is in Cloud SQL PostgreSQL, created by Alembic migrations at startup; `POST /reset` (API key required) truncates the evidence and incidents tables in one transaction and restarts IDs at INC-001/EVD-001. On deployment `f551649`, 100 incidents survived a restart into a new revision, and all were gone after reset (AC-16, 2026-10-19). The database URL and API key are stored in Google Secret Manager and injected as environment variables at start, never in git, images or logs; the key is compared in constant time, and a missing configured key rejects all requests. Our middleware writes one log line per request with a request ID, method, path, status, duration and record IDs (never headers or bodies) to Cloud Logging, and returns the ID in `X-Request-Id`, so a client failure can be matched to its line; 5xx counts and latency come from Cloud Run's request metrics. These logs are how we found that the other team's tester was resetting our database during our first AC-16 attempt (24 `POST /reset` calls from their IP during our create step).
 
 Excerpt from the deployed service (`f551649`, Cloud Logging, 2026-10-19): health check, reset without a key, unknown incident, delete attempt, then the authenticated reset ending the AC-16 run:
 
@@ -52,7 +51,7 @@ GET /health │ Requirement(s): REQ-13 │ Implemented: yes
 Success responses conform: yes (`200 {"status": "OK"}`, no key needed) │ Error responses conform: yes (none defined)
 
 POST /incidents │ Requirement(s): REQ-01, REQ-02 │ Implemented: yes
-Success responses conform: yes (`201 {incidentId, status: "OPEN"}`) │ Error responses conform: yes (400 naming the field, 401). Title ≤ 200 and description ≤ 5,000 characters are our provisional limits; the contract gives none.
+Success responses conform: yes (`201 {incidentId, status: "OPEN"}`) │ Error responses conform: yes (400 naming the field, 401). Title ≤ 200 and description ≤ 5,000 characters are provisional: Q5.2 says the maximum length is "agreed by both teams", and no value has been agreed yet.
 
 POST /incidents/{incidentId}/evidence │ Requirement(s): REQ-03 │ Implemented: yes
 Success responses conform: yes (`201 {evidenceId, recordedAt}`) │ Error responses conform: yes (400, 401, 404)
@@ -90,14 +89,14 @@ Integration: Every request first passes the request-logging middleware (request 
 
 ## Q3.2 Contract changes and pod communication
 
-Contract version at delivery: v1.0 (Phase 2 pod specification, Sections 5.1–5.3, agreed at the pod meeting on Friday 25 September with both teams present).
+Contract version at delivery: v1.0 (Phase 2 pod specification, Sections 5.1–5.3, agreed at the pod meeting on Friday 25 September at 5 PM with both teams present, with no remaining disagreements recorded).
 
 Changes since Phase 2: none. The contract was not changed in Phase 3.
 
 Pod agreement: no change needed agreement. Open questions are tracked in `docs/contract-issues.md` and with the other team over our pod's chat channel. <!-- confirm the channel name -->
 
 Intentional deviations and resolution plan: no deviation from a contract-defined behaviour. Two places where the contract is silent use our own provisional choices, and we will agree them with the other team before Phase 4 tests depend on them:
-- **Field lengths:** title ≤ 200 and description ≤ 5,000 characters. The other team's schema sets no maximum.
+- **Field lengths:** Q5.2 leaves the title and description maximum to be "agreed by both teams" (REQ-02 rejects inputs that are too long), but no value has been agreed. We use 200 and 5,000 characters provisionally; the other team's schema sets no maximum.
 - **Error codes:** `INVALID_<FIELD>`, `UNAUTHORIZED`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`.
 
 A proposed `GET /incidents` list operation (needed to count incidents in AC-02/AC-16) is not implemented and would be added only as a pod-agreed v1.1 change.
@@ -110,7 +109,7 @@ Base URL override: the acceptance suite reads the target from environment variab
 │ Response received: `GET /health` → `200 {"status":"OK"}` without a key, and `X-App-Commit: f551649`; a missing or wrong key on `/incidents/...` → `401 {"error":"UNAUTHORIZED","message":"missing or invalid API key"}` (2026-10-19).
 │ Conforms to spec: yes. No instructor OpenAPI file was available to our team, so conformance was checked against the Phase 2 pod contract v1.0, which the other team's published OpenAPI document also transcribes.
 Known deviations from the OpenAPI spec: none for implemented operations. Notes:
-- Title ≤ 200 and description ≤ 5,000 characters are provisional limits the contract doesn't set.
+- Title ≤ 200 and description ≤ 5,000 characters are provisional, because Q5.2 leaves the maximum to be agreed by both teams and none has been agreed yet.
 - `HEAD /health` returns 405; only GET is specified.
 - Phase 4 operations (decisions, corrections, deadline-status, filing, timeline) are not implemented yet.
 
@@ -120,7 +119,7 @@ AC-01 │ Requirement(s): REQ-01, REQ-14
 Test(s): test_ac01_create_then_retrieve_returns_identical_values, test_ac01_each_incident_gets_a_distinct_id │ Type: success, boundary (timezone offsets, non-ASCII text) │ Automated: yes
 
 AC-02 │ Requirement(s): REQ-02, REQ-14
-Test(s): test_ac02_invalid_incident_is_rejected_naming_the_field, test_postgres_invalid_incidents_do_not_write │ Type: failure (missing or empty fields, malformed, offset-less or future timestamps, wrong types) │ Automated: yes. Maximum-length tests are pending the pod's agreement on limits.
+Test(s): test_ac02_invalid_incident_is_rejected_naming_the_field, test_postgres_invalid_incidents_do_not_write │ Type: failure (missing or empty fields, malformed, offset-less or future timestamps, wrong types) │ Automated: yes. AC-02 expects "the incident count is unchanged", but the contract has no list operation, so the count is checked in the database test and over HTTP for known IDs. Maximum-length tests are pending the pod's agreement on limits.
 
 AC-03 │ Requirement(s): REQ-14
 Test(s): test_ac03_unknown_id_get_and_post_return_404, test_unknown_incident_get_is_404_with_error_format │ Type: failure │ Automated: yes
@@ -135,7 +134,7 @@ AC-08 (partial: no-edit/no-delete only) │ Requirement(s): REQ-07
 Test(s): test_stored_incident_cannot_be_edited_or_deleted │ Type: failure (PUT/PATCH/DELETE → 405, record unchanged) │ Automated: yes. Correction history is Phase 4.
 
 AC-14 │ Requirement(s): REQ-13
-Test(s): test_health_is_public, test_authenticated_route_rejects_bad_key, test_authenticated_route_accepts_valid_key, test_deployment_uses_https │ Type: success, failure │ Automated: yes
+Test(s): test_health_is_public, test_authenticated_route_rejects_bad_key, test_authenticated_route_accepts_valid_key, test_deployment_uses_https │ Type: success, failure │ Automated: partly. The pod spec has AC-14 combine automated tests with a code/deployment inspection, which the other team does with a checklist during cross-team testing.
 
 AC-16 │ Requirement(s): REQ-14, REQ-15
 Test(s): test_reset_requires_key, test_reset_succeeds_and_is_repeatable, scripts/check_persistence.py (create → restart → verify → reset), scripts/performance.py (100 incidents loaded, 200 timed requests, ≥ 95% within 1 s) │ Type: success, failure, performance threshold │ Automated: yes. Only the restart between the persistence steps is run by hand (a new Cloud Run revision).
