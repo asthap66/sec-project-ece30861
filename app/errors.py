@@ -99,13 +99,13 @@ def validation_error(errors: Sequence[Any]) -> JSONResponse:
 async def _handle_api_error(request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, ApiError):  # registered for this type only
         raise exc
-    return error_response(exc.status_code, exc.code, exc.message)
+    return _with_source(request, error_response(exc.status_code, exc.code, exc.message))
 
 
 async def _handle_validation(request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, RequestValidationError):  # registered for this type only
         raise exc
-    return validation_error(exc.errors())
+    return _with_source(request, validation_error(exc.errors()))
 
 
 async def _handle_http(request: Request, exc: Exception) -> JSONResponse:
@@ -120,13 +120,37 @@ async def _handle_http(request: Request, exc: Exception) -> JSONResponse:
         message = f"{request.method} is not allowed on {request.url.path}"
     else:
         message = str(exc.detail)
-    return error_response(exc.status_code, code, message, headers=getattr(exc, "headers", None))
+    return _with_source(
+        request,
+        error_response(exc.status_code, code, message, headers=getattr(exc, "headers", None)),
+    )
 
 
 async def _handle_unexpected(request: Request, exc: Exception) -> JSONResponse:
     # Log the details server-side; never send internals (or data) to the client.
     logger.exception("unhandled error on %s %s", request.method, request.url.path)
-    return error_response(500, "INTERNAL_ERROR", "an unexpected error occurred")
+    return _with_source(
+        request, error_response(500, "INTERNAL_ERROR", "an unexpected error occurred")
+    )
+
+
+def _with_source(request: Request, response: JSONResponse) -> JSONResponse:
+    """Testing-interface paths (/test/...) need a "source" field on errors."""
+    if request.url.path.startswith("/test/"):
+        import json
+
+        body = json.loads(bytes(response.body))
+        body["source"] = "system"
+        return JSONResponse(
+            status_code=response.status_code,
+            content=body,
+            headers={
+                k: v
+                for k, v in response.headers.items()
+                if k.lower() not in ("content-length", "content-type")
+            },
+        )
+    return response
 
 
 def register_error_handlers(app: FastAPI) -> None:

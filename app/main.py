@@ -18,8 +18,9 @@ from fastapi.openapi.utils import get_openapi
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.auth import API_KEY_HEADER, ApiKeyMiddleware
+from app.coverage_runtime import session_coverage
 from app.errors import register_error_handlers
-from app.routes import evidence, incidents, system
+from app.routes import evidence, incidents, system, test_interface
 
 logger = logging.getLogger("app.requests")
 
@@ -62,7 +63,12 @@ class RequestLogMiddleware:
             await send(message)
 
         try:
-            await self.app(scope, receive, send_with_status)
+            if scope["path"].startswith("/test/"):
+                # testing-interface requests don't count toward a session's coverage
+                with session_coverage.interface_request():
+                    await self.app(scope, receive, send_with_status)
+            else:
+                await self.app(scope, receive, send_with_status)
         finally:
             ids = ",".join(_PUBLIC_ID.findall(scope["path"])) or "-"
             logger.info(
@@ -111,6 +117,7 @@ def create_app() -> FastAPI:
     )
     register_error_handlers(application)
     application.include_router(system.router)
+    application.include_router(test_interface.router)
     application.include_router(incidents.router)
     application.include_router(evidence.router)
     # Middleware runs outermost-last-added: logging wraps auth, so rejected
@@ -121,5 +128,7 @@ def create_app() -> FastAPI:
     return application
 
 
+# Per-session code coverage for GET /test/report (only when APP_COVERAGE=1).
+session_coverage.start()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 app = create_app()

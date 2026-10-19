@@ -96,3 +96,16 @@ class Evidence(Base):
     __table_args__ = (
         CheckConstraint(_one_of("category", EVIDENCE_CATEGORIES), name="category_valid"),
     )
+
+
+class TestSession(Base):
+    """A session created by POST /test/setup (course testing interface).
+
+    Stored in the database so a reused session ID is caught (409) even after a
+    restart. The course spec says a session ID is never reused.
+    """
+
+    __tablename__ = "test_sessions"
+
+    session_id: Mapped[str] = mapped_column(String(200), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

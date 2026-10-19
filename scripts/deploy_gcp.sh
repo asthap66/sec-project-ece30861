@@ -34,12 +34,14 @@ gcloud builds submit "${SRC}" --project "${PROJECT_ID}" --region "${REGION}" \
   --config "${SRC}/cloudbuild.yaml" --quiet
 
 # min-instances 1 keeps one instance warm so no request pays a cold start
-# (REQ-15: 95% of requests within 1 s). Secrets come from Secret Manager.
+# (REQ-15: 95% of requests within 1 s). max-instances 1 because the testing
+# interface keeps per-session code coverage in memory, so every request of a
+# session has to reach the same instance. Secrets come from Secret Manager.
 gcloud run deploy "${SERVICE}" --project "${PROJECT_ID}" --region "${REGION}" \
   --image "${IMAGE}" \
   --add-cloudsql-instances "${PROJECT_ID}:${REGION}:${SQL_INSTANCE}" \
   --set-secrets "DATABASE_URL=database-url:latest,API_KEY=api-key:latest" \
-  --min-instances 1 --max-instances 2 --cpu 1 --memory 512Mi \
+  --min-instances 1 --max-instances 1 --cpu 1 --memory 512Mi \
   --allow-unauthenticated --quiet
 
 URL="$(gcloud run services describe "${SERVICE}" --project "${PROJECT_ID}" \

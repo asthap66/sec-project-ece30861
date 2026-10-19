@@ -20,6 +20,7 @@ import hmac
 import logging
 
 from fastapi import Request
+from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.config import get_settings
@@ -70,6 +71,16 @@ class ApiKeyMiddleware:
             return
         if not allowed:
             response = error_response(401, "UNAUTHORIZED", "missing or invalid API key")
+            if scope["path"].startswith("/test/"):
+                # testing-interface endpoints need {"message", "source"} too
+                response = JSONResponse(
+                    status_code=401,
+                    content={
+                        "error": "UNAUTHORIZED",
+                        "message": "missing or invalid API key",
+                        "source": "system",
+                    },
+                )
             await response(scope, receive, send)
             return
         await self.app(scope, receive, send)

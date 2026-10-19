@@ -29,6 +29,9 @@ USER appuser
 ARG GIT_COMMIT=unknown
 ENV GIT_COMMIT=${GIT_COMMIT}
 
+# Per-session code coverage for GET /test/report (app/coverage_runtime.py).
+ENV APP_COVERAGE=1
+
 EXPOSE 8000
 # Applies pending migrations, then starts the API (see scripts/start.sh).
 CMD ["sh", "scripts/start.sh"]

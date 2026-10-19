@@ -64,6 +64,6 @@ def database(monkeypatch: pytest.MonkeyPatch, settings_env: None) -> Iterator[st
     from sqlalchemy import text
 
     with db_module.get_engine().begin() as conn:
-        conn.execute(text("TRUNCATE TABLE evidence, incidents RESTART IDENTITY"))
+        conn.execute(text("TRUNCATE TABLE evidence, incidents, test_sessions RESTART IDENTITY"))
     yield url
     _clear_caches()
