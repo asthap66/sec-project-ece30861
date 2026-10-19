@@ -178,3 +178,30 @@ Tester coverage: code 135/522 app lines; component null (the pod spec defines no
 
 Failure: none in the reported runs. An earlier AC-16 attempt (02:08 UTC) found 92/100 incidents intact.
 │ Classification: test (environment), not system │ Cause: the other team's tester was running a session against our service at the same time, and Cloud Run logs show 24 `POST /reset` calls from their IP during our create step │ Plan: separate destructive-test windows agreed with the other team (Phase 4); the isolated rerun passed, and both attempts are recorded in `docs/test-results/2026-10-19-ac16-deployed.md`.
+
+---
+
+## Q8.1 Actual GenAI use (Srihari)
+
+Tools and delegation: I used Claude Code (in the terminal, working on my own branches) for my infrastructure, database and deployment work, in line with our Phase 2 plan of using GenAI for development and documentation but not inside the running system. I delegated:
+- code for the FastAPI skeleton: config, SQLAlchemy models and Alembic migrations, API-key middleware, shared error handlers and request logging
+- Docker and Google Cloud Run/Cloud SQL deployment scripts
+- the course testing interface (`/test/setup`, `/test/report`) and our separate tester service
+- infrastructure tests and first drafts of `docs/deployment.md` and my Q2/Q3 sections
+
+Decisions such as hosting, secret handling, branch strategy and what to merge stayed with me.
+
+Verification: Nothing was merged until Ruff, strict mypy and the full test suite (212 unit/infrastructure tests plus 48 acceptance tests) passed locally and in CI, and I re-ran the suite on a fresh clone of the integration branch before deploying. I checked deployed behaviour directly instead of trusting generated summaries:
+- the `X-App-Commit` header to confirm the running version
+- live 401/404/405 responses
+- Cloud Logging for the matching request lines
+- the AC-16 persistence and performance scripts against the deployment
+
+I also checked submission claims against the Phase 2 pod document. That caught a draft that said the contract sets no field-length limit, when Q5.2 says the limit is to be agreed by both teams.
+
+Correction example: While setting up Cloud SQL, a generated zsh command wrote the project variable as `$P:us-central1`. zsh reads `:u` as an "uppercase" modifier, so the stored database URL secret and the proxy connection name came out with an uppercased project ID. I caught it when the Cloud SQL proxy could not find the instance. I fixed it by using `${P}`, adding a corrected secret version and disabling the bad one, then confirmed with a successful database connection and deployment. A second example: the first AC-16 run reported only 92/100 incidents intact. Instead of accepting a persistence defect, I checked the Cloud Run logs, which showed the other team's tester sending 24 resets during our run. We recorded it as test interference and re-ran in an isolated window.
+
+Agentic principles: I mostly followed them: each task had a clear scope, explicit constraints (no secrets in the repo or logs, never push to main, destructive tests only against our own synthetic data), and an objective check (tests, static analysis, live HTTP and log evidence) before I accepted the output. I deviated in places, honestly:
+- I let the agent run long multi-step sequences on its own, including deployments and cloud configuration, and reviewed the results afterwards rather than each step.
+- Its commits are under my name, with this section as the disclosure.
+- I started the first AC-16 run without first agreeing a test window with the other team, which caused the interference above.
