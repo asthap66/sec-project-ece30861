@@ -1,0 +1,32 @@
+# Image for the tester service (course testing interface): tester/ plus the
+# acceptance suite it runs. Does not contain the system's app code.
+FROM python:3.12-slim
+
+COPY --from=ghcr.io/astral-sh/uv:0.9.28 /uv /usr/local/bin/uv
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH=/srv
+
+WORKDIR /srv
+
+# Locked dependencies, including the dev group (pytest, httpx) the suite needs.
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen --no-install-project
+
+COPY tester ./tester
+COPY tests/__init__.py tests/conftest.py ./tests/
+COPY tests/acceptance ./tests/acceptance
+COPY tests/fixtures ./tests/fixtures
+
+RUN useradd --create-home --uid 10001 testeruser
+USER testeruser
+
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+EXPOSE 8000
+CMD ["sh", "-c", "exec uvicorn tester.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]
