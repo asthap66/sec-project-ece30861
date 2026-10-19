@@ -100,3 +100,18 @@ Target: https://incident-clock.onrender.com, key stored in Secret Manager
   - code: 325/406 lines, reported by their system; their basis counts lines run at import as executed, ours doesn't, so the two numbers can't be compared directly
   - component: null
   - system: 8/16
+
+## Cross-team run: the other team's tester against our system (2026-10-18 EDT)
+
+Reported by the other team; session IDs and times match our Cloud Run logs
+(client `74.220.50.246`).
+
+| Run | Time (EDT / UTC) | Session | Result | Coverage (code / component / system) |
+| --- | --- | --- | --- | --- |
+| 1 | Oct 18 10:07–10:09 PM / 02:07–02:09 | `acee3693-a193-497b-8afb-8b9e9cea6294` | 82 tests: 77 pass, 4 fail, 0 error, 1 skip | 140/522, 7/10 (inflated, see below), 8/16 |
+| 2 | Oct 18 10:45–10:46 PM / 02:45–02:46 | `f69a8dca-d153-4b3f-a880-b112c499eeb4` | 82 tests: **81 pass**, 0 fail, 0 error, 1 skip | 140/522, 5/10, 8/16 |
+
+- **Run 1's 4 failures:** a bug in their tests, which sent a JSON body on GET requests. Cloud Run's front end rejects those with an HTML 400 before they reach our app, which is why they don't appear in our request logs. They fixed their tests and re-ran. Use run 2's numbers.
+- **The skip:** their AC-02 "incident count unchanged" check, which can't run because the contract has no list or count operation (spec issue, proposed for v1.1; see `docs/contract-issues.md` #2).
+- **Main problem on our side:** none.
+- **Side effect:** run 1 overlapped our first AC-16 attempt, and its resets invalidated that attempt (`docs/test-results/2026-10-19-ac16-deployed.md`).
