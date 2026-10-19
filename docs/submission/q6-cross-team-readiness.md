@@ -1,36 +1,48 @@
 # Q6 Cross-team readiness
 
-Lead: Mohit. Working checklist and raw results: `docs/test-results/cross-team.md`.
+Lead: Mohit. This draft matches `docs/submission/mohit-gradescope-ready.md`, which is the version to paste. Raw results are in `docs/test-results/`.
 
-Both teams built from the same specification, the Phase 2 pod contract v1.0. The other team's service publishes its copy at `/openapi.yaml`. It lists the same operations, fields and rules we built from, so neither team has added anything to the shared interface.
+## Version facts
 
-## Testing in both directions
-
-| Direction | What happened | Result |
+| Fact | Value | How it was checked |
 | --- | --- | --- |
-| Our tests → their service (https://incident-clock.onrender.com) | 2026-10-18: our acceptance suite, run non-destructively | **45 passed, 0 failed, 3 skipped.** The skips are the `/reset` tests, left out on purpose so we didn't wipe their data. [Details](../test-results/2026-10-18-cross-team-ours-on-theirs.md) |
-| Their tests → our service (https://incident-api-356019173418.us-central1.run.app) | Their tester (https://incident-clock-tester.onrender.com) uses the course testing interface. Our system added `/test/setup` and `/test/report` on 2026-10-18 (`f551649`). We gave them our URLs and, privately, a key | **Not run yet.** Waiting for their tester to target us |
-| Our tester → our service (check of the interface) | 2026-10-18: our deployed tester (https://incident-tester-356019173418.us-central1.run.app) ran a full session against our system | **48 pass**; code coverage 135/522 lines; 8/16 ACs exercised (`docs/cross-team-testing.md`) |
-| Our tester → their service | Needs their key in our Secret Manager and their URL in the tester's approved list | **Not run yet** |
+| Final deployed system (cover page) | `f551649` at https://incident-api-356019173418.us-central1.run.app | `X-App-Commit` header, 2026-10-19 01:55 UTC |
+| Our tester | https://incident-tester-356019173418.us-central1.run.app | `GET /health` returned 200 |
+| CI run on the deployed commit | [run 39182054445](https://github.com/asthap66/sec-project-ece30861/actions/runs/39182054445), `f551649`, success | GitHub Actions |
+| Latest CI run on `integration` | [run 39185515218](https://github.com/asthap66/sec-project-ece30861/actions/runs/39185515218), `a520f25`, success | GitHub Actions |
+| Older deployments with results | `ed5f449` (acceptance), `f2b607c` (AC-16 persistence and performance) | Q2 and `docs/test-results/2026-10-18-deployed.md` |
 
-Our suite only checks the outside behaviour of an operation, so the 45 passes are evidence that their AC-01 to AC-05 and AC-14 behaviour matches the contract as we read it. That includes AC-14's HTTPS check. They aren't evidence about AC-16 (persistence, reset, response time), which we haven't run against them.
+**Changes between `f2b607c` and `f551649`:**
+- Deployment scripts and the `X-App-Commit` header.
+- The `/docs` Authorize button.
+- The course testing interface: `/test/setup`, `/test/report`, migration 0002 and per-session coverage via `APP_COVERAGE=1`.
+- Max instances changed to 1.
 
-## Specification ambiguities and their status
+The incident and evidence routes are the same, but this isn't a docs-only difference.
 
-| Topic | What the contract says | Our service | Their service | Status |
-| --- | --- | --- | --- | --- |
-| Course testing interface (`/test/setup`, `/test/report`) | Defined by the course's "Cross-team Testing Interface" spec, not the pod contract | Implemented (Srihari) | Implemented | Both sides have it. Session semantics: one active session; setup resets data; a reused ID is 409. Errors on `/test/*` use `{message, source}` |
-| `GET /incidents` (issue #2) | Not defined, though AC-02 and AC-16 refer to listing incidents | Not implemented (405) | Not in their spec | Both left it out, so the services agree. The AC-02 count check and AC-16's "no incidents remain" are checked one ID at a time instead |
-| Field length limits (issue #3) | Not specified | Title ≤ 200, description ≤ 5000 (placeholders) | Only "not empty"; maximums left open | **Open.** Longer valid input would be accepted by them and rejected by us with a 400 |
-| Unknown extra fields | Not specified | Ignored | Not specified in their spec | Unconfirmed. No failures seen |
-| Error code names | Only `{error, message}` is required | `UNAUTHORIZED`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `INVALID_<FIELD>` | `UNAUTHORIZED`, `NOT_FOUND` seen; also `INVALID_SESSION_ID` | Our tests check the shape, not the exact code. Unconfirmed whether their tests check exact codes |
-| Health body | `{status: string}` | `"OK"` | `"ok"` | Both are valid |
-| Reset coordination | `/reset` clears all data | — | — | **Open.** No time window has been agreed for destructive runs in either direction |
 
-## Still open
+## Q6.1 Cross-team testing in both directions
 
-These are recorded as they stand at submission, not as resolved.
+| Direction | Status | Result | Issues / owners |
+| --- | --- | --- | --- |
+| Our suite → their system (https://incident-clock.onrender.com) | Done 2026-10-18, about 20:25 EDT, by Mohit. Non-destructive (`ALLOW_DESTRUCTIVE_TESTS` unset), suite at `38972ff` | **45 passed, 0 failed, 3 skipped.** The skips are our 3 reset tests, left out because no reset window was agreed | None from the passing tests. Their health returns `"ok"` and ours `"OK"`; both meet `{status: string}`. Our run left synthetic incidents in their database |
+| Their tester → our system | **PENDING.** Our `/test/setup` and `/test/report` are live (`f551649`), and we sent our system and tester URLs. No report from them is in the repo or anywhere we've seen | No result yet | n/a |
+| Our tester → their system | **PENDING.** Our tester only targets approved URLs, and their URL and key haven't been added. Changing that is Srihari's call | No result yet | n/a |
+| Our tester → our system (self-check of the interface) | Done 2026-10-18 by Srihari | 48 pass; coverage as in Q4.5 | n/a |
 
-- Their tester's run against our system, and our tester's run against theirs (their key into Secret Manager, their URL into `ALLOWED_TARGETS`).
-- Agree length limits and the reset window with the other team, then run our `/reset` tests and AC-16 scripts against them.
-- Record their results against our service, including failures and who owns each one, once they can run.
+**Coverage available:**
+- **Our tester on our system:** code 135/522 lines; component null; system 8/16 ACs exercised.
+- **Our suite on their system:** it ran without the testing interface, so there's no code-coverage figure. It exercised AC-01 to AC-05, the REQ-07 half of AC-08, and AC-14.
+- **Their side:** **PENDING.**
+
+## Q6.2 Specification ambiguities
+
+| Ambiguity | Effect | Resolution or proposed plan |
+| --- | --- | --- |
+| No instructor OpenAPI spec | Each team could build its own idea of the interface | Resolved inside our team (issue #1): build from the Phase 2 pod contract v1.0. The other team's `/openapi.yaml` is a copy of the same contract, so we line up in practice |
+| AC-02 says "list all incidents" and AC-16 says "GET the incidents", but there's no list route (issue #2) | Neither team can check "count unchanged" or "no incidents remain" through the API | Proposed to the pod, not agreed: add `GET /incidents`, or reword the ACs. Until then we check per ID and use DB-level tests for "nothing saved" and "tables empty" |
+| Max lengths for title/description are left open (issue #3) | Their schema only requires non-empty strings; we reject title > 200 and description > 5000. Long valid input could pass on theirs and fail on ours | Proposed: agree on numbers with the other team. Ours are placeholders, and boundary tests wait until then |
+| Unknown extra fields aren't covered | One side might reject what the other accepts | We ignore them. Not yet raised with the other team |
+| Error code names: only `{error, message}` is required | Tests checking exact codes could fail across teams | Our tests check the shape, not the code. We share our code list (Q3) and propose comparing |
+| `/reset` and `/test/setup` clear all data on a shared deployment | One team's run can wipe the other's mid-test | Proposed: agree a time window before any destructive run. Nothing has been agreed yet, so none were run cross-team |
+| The course testing interface sits outside the pod contract | Error format for `/test/*` differs (`{message, source}`); "session" meaning is up to each team | Both teams implemented it. Ours: one active session, setup resets the data, reusing an ID gives 409 (`docs/cross-team-testing.md`) |

@@ -1,47 +1,81 @@
 # Q7 Status and limitations
 
-Consolidated by Mohit from the Q2–Q6 sections and `docs/test-results/`. Srihari and Astha: please check the lines about your areas.
+Lead: Mohit (consolidating; Srihari and Astha check their areas). This draft matches `docs/submission/mohit-gradescope-ready.md`, which is the version to paste. Raw results are in `docs/test-results/`.
 
-## Current status (2026-10-18)
+## Version facts
 
-- **Delivered:** every Phase 3 operation in the pod contract: `GET /health`, `POST /incidents`, `GET /incidents/{id}`, `POST /incidents/{id}/evidence`, `POST /reset`. They're backed by PostgreSQL, with API-key auth, `{error, message}` errors and 405 for edits and deletes.
-- **Deployed:** Google Cloud Run with Cloud SQL, over HTTPS, at https://incident-api-356019173418.us-central1.run.app. The running commit is shown in the `X-App-Commit` header.
-- **Validated:**
-  - 48/48 acceptance tests passed against the deployment.
-  - 100/100 incidents were intact after a restart.
-  - 200/200 requests completed within 1 s (p95 61 ms).
-  - CI runs static checks, 170 unit/infrastructure tests, the acceptance suite and an AC-16 smoke test on every push.
-- **Course testing interface:** our system has `POST /test/setup` and `GET /test/report`, and our tester is deployed at https://incident-tester-356019173418.us-central1.run.app. A full session against our system gave 48 pass, code coverage 135/522 lines, 8/16 ACs (Srihari, `docs/cross-team-testing.md`).
-- **Cross-team:** our suite passed 45/45 against the other team's service. Their tester hasn't run against ours yet, and our tester hasn't run against theirs (see Q6).
+| Fact | Value | How it was checked |
+| --- | --- | --- |
+| Final deployed system (cover page) | `f551649` at https://incident-api-356019173418.us-central1.run.app | `X-App-Commit` header, 2026-10-19 01:55 UTC |
+| Our tester | https://incident-tester-356019173418.us-central1.run.app | `GET /health` returned 200 |
+| CI run on the deployed commit | [run 39182054445](https://github.com/asthap66/sec-project-ece30861/actions/runs/39182054445), `f551649`, success | GitHub Actions |
+| Latest CI run on `integration` | [run 39185515218](https://github.com/asthap66/sec-project-ece30861/actions/runs/39185515218), `a520f25`, success | GitHub Actions |
+| Older deployments with results | `ed5f449` (acceptance), `f2b607c` (AC-16 persistence and performance) | Q2 and `docs/test-results/2026-10-18-deployed.md` |
 
-## Changes from the Phase 2 plan
+**Changes between `f2b607c` and `f551649`:**
+- Deployment scripts and the `X-App-Commit` header.
+- The `/docs` Authorize button.
+- The course testing interface: `/test/setup`, `/test/report`, migration 0002 and per-session coverage via `APP_COVERAGE=1`.
+- Max instances changed to 1.
 
-- **Specification source:** no instructor OpenAPI file was available, so we built from the Phase 2 pod contract v1.0. The other team did the same (`docs/contract-issues.md` #1).
-- **Hosting:** Google Cloud Run and Cloud SQL, chosen and run by Srihari (`docs/deployment.md`).
-- **Precedence where the contract is silent:** the API key is checked before routing, validation or lookup (`docs/contract-issues.md` #4).
-- **AC-16 checks are scripts, not pytest tests:** a service restart happens partway through, so they're `scripts/check_persistence.py` and `scripts/performance.py`.
+The incident and evidence routes are the same, but this isn't a docs-only difference.
 
-## Unfinished scope
 
-- **Phase 4 operations:** decisions, corrections, deadline status, filing and timeline. Not implemented, and 409 state rules aren't exercised yet.
-- **Tester runs across teams:** neither tester has run against the other team's system yet.
-- **Component coverage** is reported as null, because the pod spec defines no component list.
-- **`GET /incidents`** isn't in the contract (issue #2). AC-02's count check and AC-16's "no incidents remain" are checked per ID instead.
-- **Length limits:** placeholders (title 200, description 5000) until the pod agrees (issue #3), so boundary tests aren't written.
-- **Destructive cross-team runs:** our `/reset` tests and AC-16 scripts haven't run against the other team. No reset window has been agreed.
+## Q7.1 Delivered and incomplete work
 
-## Known defects and risks
+**Delivered:**
+- Create and retrieve incidents with status `OPEN`, UTC timestamps and `INC-001` IDs (REQ-01, AC-01). Invalid input gets a 400 naming the field, and nothing is saved (REQ-02, AC-02, apart from the list-based count).
+- Evidence attachment with all four categories, recorded time, unknown incident giving 404 (REQ-03, AC-03, AC-04, AC-05). Edit and delete give 405 (REQ-07).
+- API-key auth on everything except `/health`, served over HTTPS (REQ-13, AC-14). `{error, message}` errors and `POST /reset` (REQ-14).
+- Data persists in Cloud SQL across restarts (REQ-15, AC-16 on `f2b607c`).
+- The course testing interface on our system, plus a deployed tester that runs our 48-test suite.
+- CI that runs static checks, 212 tests, the acceptance suite and an AC-16 smoke test on every push.
 
-- **Clock-sensitive database test:** `tests/infrastructure/test_feature_database.py` compares a database timestamp with the test machine's clock. It failed once locally because a Docker database clock was a few seconds off. It passes in CI. It needs a small tolerance (Astha).
-- **One client-side timeout:** during the first deployed persistence run, one request timed out at 10 s. Cloud Run's logs showed no request slower than 0.36 s, so it was most likely the network path. The run was repeated and passed (Q2).
-- **Coverage is per instance and in memory:** the service runs `max-instances 1` so a session's coverage stays on one instance, and a restart clears it (Srihari).
-- **`HEAD /health` returns 405.** Only `GET` is in the contract, so this is not a contract defect, but some uptime checkers use `HEAD`.
-- **Synthetic data on the other team's service:** our non-destructive run left test incidents in their database.
+**Incomplete:**
+- Phase 4 decision workflow and deadlines: REQ-04, REQ-05, REQ-08, REQ-09, REQ-10; AC-06, AC-07, AC-09, AC-10, AC-15. Not started.
+- Corrections, filing, timeline (REQ-06, REQ-11, REQ-12; AC-08 history half, AC-11 to AC-13). Planned for Phase 5.
+- AC-16 persistence and timing on the final deployment `f551649`. Not re-run.
+- Cross-team tester runs in both directions, and destructive cross-team runs (AC-16 and reset).
+- Pod decisions on the list route (issue #2) and length limits (issue #3).
 
-## Adjustments for Phase 4
+## Q7.2 Known limitations
 
-1. Run both teams' testers against each other's systems and record the results.
-2. Settle issues #2 and #3 with the other team, then add length-boundary tests and, if agreed, a list check.
-3. Implement decisions, corrections, deadline status, filing and timeline. Extend the shared fixtures and acceptance suite with the AC criteria for them, including 409 state rules.
-4. Agree a reset window and run both teams' destructive tests and AC-16 in both directions.
-5. Add a timestamp tolerance to the clock-sensitive database test.
+| ID | Affected REQ / operation | Severity | Workaround | Target phase |
+| --- | --- | --- | --- | --- |
+| L1 | AC-02 count check, AC-16 "no incidents remain" (no `GET /incidents`) | Medium | Per-ID 404 checks over HTTP, plus DB row-count tests in CI | Phase 4, after pod decision |
+| L2 | REQ-02 length limits (`POST /incidents`) | Medium | Placeholders 200/5000; tell the other team our limits | Phase 4, after pod decision |
+| L3 | AC-16 on final version `f551649` not measured | Medium | Results on `f2b607c` (same incident/evidence routes) and CI smoke runs on `f551649` | Before Phase 4 work starts |
+| L4 | Cross-team tester runs not done | High for Q6 grading | Our suite passed 45 against them (3 skipped); our interface is live for theirs | Phase 4 start |
+| L5 | `/test/report` coverage held in memory on one instance | Low | `max-instances 1`; restart clears coverage only, not data | Phase 4 |
+| L6 | `test_feature_database.py` line 44 compares the DB clock with the host clock | Low (tests only) | Passes in CI. Failed locally once with a measured 3 to 4 s host/container clock gap | Phase 4 (Astha adds a tolerance) |
+| L7 | No enforced merge or deploy gate | Medium | Team habit of merging and deploying only green commits | Phase 4 (needs branch protection, which this private repo plan doesn't offer, or a public repo) |
+| L8 | `HEAD /health` gives 405 | Low | Use GET | Phase 4, if needed |
+| L9 | Hosting on Google Cloud while the course slide says AWS | Unknown, **NOT VERIFIED** | Ask the instructor | Before Phase 4 |
+
+## Q7.3 Comparison with the Phase 4 plan and changes needing pod agreement
+
+Our Phase 2 plan (Q6.2) set Phase 4 to deliver:
+- The human materiality decision workflow and state rules.
+- The four-business-day deadline calculator with the holiday list.
+- The deadline-status endpoint.
+- Expanded fixtures, covering REQ-04, REQ-05, REQ-08, REQ-09 and REQ-10 and validated with AC-06, AC-07, AC-09, AC-10 and state-conflict tests.
+
+That plan still holds. Phase 3 delivered what was planned (REQ-01 to REQ-03, REQ-13, and most of REQ-14/15), so Phase 4 can build on working storage, auth and deployment.
+
+**Added to Phase 4:**
+- The leftover Phase 3 items: AC-16 on the final version, cross-team tester runs, and the length-limit and list-route decisions.
+- Upkeep of the course testing interface, which wasn't in the Phase 2 plan.
+
+**Updated risks:**
+- **Deadline arithmetic around holidays and Eastern Time** is still the highest-risk logic. The AC-09 and AC-10 fixtures should be written first.
+- **Shared-deployment resets:** the `/test/setup` and `/reset` calls on a shared deployment can wipe the other team's runs.
+- **Divergent choices on open contract points:** lengths, extra fields and error codes could make cross-team runs fail even when both systems are correct.
+- **No enforced CI gate:** a bad commit could be deployed.
+
+**Changes that need pod agreement (not decided yet):**
+1. Add `GET /incidents` or reword AC-02/AC-16.
+2. Exact max lengths and the whitespace policy.
+3. Whether unknown fields are ignored or rejected.
+4. A shared list of error codes.
+5. A schedule for destructive test windows.
+6. The shared holiday list for AC-10.

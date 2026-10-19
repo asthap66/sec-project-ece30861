@@ -31,4 +31,5 @@ Record each run in this folder with the date, their commit or version if they sh
 | Direction | Status |
 | --- | --- |
 | Our tests → their service | Non-destructive run 2026-10-18: [45 passed, 0 failed, 3 reset tests skipped](2026-10-18-cross-team-ours-on-theirs.md). Reset tests and AC-16 wait for an agreed window |
-| Their tests → our service | Our system now has `/test/setup` and `/test/report` (Srihari, `f551649`). Waiting for their tester to run against us |
+| Their tests → our service | **Pending.** Our system has `/test/setup` and `/test/report` (`f551649`). No report from their tester exists yet |
+| Our tester → their service | **Pending.** Their URL and key aren't in our tester's approved targets (Srihari's call) |

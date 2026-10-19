@@ -83,6 +83,8 @@ Our tester against our deployed system:
 - Report before the run: `409`.
 - Run: `200` in 5.9 s. **48 pass** with unique test IDs. Coverage: code 135/522
   lines, component null with a reason, system 8/16 (AC-01, 02, 03, 04, 05, 08, 14, 16).
+  "System" counts ACs with at least one test run, not ACs fully met: AC-08 is
+  only its REQ-07 edit/delete half, and AC-16 is only the reset tests.
 - Running again: `409`. The stored report matches the run response.
 - Non-approved target: `400`.
 - Our system's `/test/setup` without a key: `401` with `source: system`.
