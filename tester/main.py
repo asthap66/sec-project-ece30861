@@ -77,6 +77,16 @@ def _target_problem(target_url: Any, allowed: list[str]) -> str | None:
     return None
 
 
+@app.get("/", include_in_schema=False)
+def index() -> dict[str, Any]:
+    """Landing page for the registry's tester base URL, which otherwise 404s."""
+    return {
+        "service": app.title,
+        "docs": "/docs",
+        "endpoints": ["GET /health", "POST /test/setup", "POST /test/run", "GET /test/report"],
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "OK"}

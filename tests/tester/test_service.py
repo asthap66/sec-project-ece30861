@@ -187,3 +187,10 @@ def test_bad_requests(
     response = client.post(path, json=body) if method == "post" else client.get(path)
     assert response.status_code == status
     assert response.json()["source"] == "tester" and response.json()["message"]
+
+
+def test_base_url_lists_the_endpoints() -> None:
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json()["docs"] == "/docs"
+    assert "POST /test/run" in response.json()["endpoints"]
