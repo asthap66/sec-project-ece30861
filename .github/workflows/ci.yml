@@ -75,7 +75,29 @@ jobs:
           API_KEY: ci-acceptance-key
           # Safe here: the target is the throwaway app and database inside this job.
           ALLOW_DESTRUCTIVE_TESTS: "1"
-        run: uv run pytest -m acceptance
+        run: uv run pytest -m "acceptance and not phase4"
+
+      # Temporary informational selection; make required after feature integration.
+      # Sequential in this job: reset tests never race against Phase 4 writes.
+      - name: Phase 4 acceptance (informational until integration)
+        continue-on-error: true
+        env:
+          BASE_URL: http://127.0.0.1:8000
+          API_KEY: ci-acceptance-key
+          ALLOW_DESTRUCTIVE_TESTS: "1"
+        run: |
+          export TESTER_RESULTS_FILE="$PWD/phase4-events.jsonl"
+          export GIT_COMMIT="$GITHUB_SHA"
+          uv run python -m pytest -m phase4 -p tester.pytest_plugin --junitxml=phase4-results.xml
+
+      - name: Upload Phase 4 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4-results
+          path: |
+            phase4-results.xml
+            phase4-events.jsonl
 
       # AC-16 smoke run against the in-job app: restart persistence, reset, and
       # response time. Real results come from runs against the deployment.

@@ -134,6 +134,10 @@ def build_report(
         "session_id": session_id,
         "target_url": target_url,
         "results": results,
+        "summary": {
+            outcome: sum(result["outcome"] == outcome for result in results)
+            for outcome in ("pass", "fail", "error", "skip")
+        },
         "coverage": {
             "code": code_coverage,
             "component": {
@@ -146,9 +150,8 @@ def build_report(
                 "covered": len(exercised),
                 "total": AC_TOTAL,
                 "basis": "Acceptance criteria AC-01 to AC-16 in the pod specification; one "
-                "counts as exercised when at least one test for it ran: "
-                + (", ".join(sorted(exercised)) or "none")
-                + ".",
+                "counts as partially exercised when at least one test ran "
+                "(not full verification): " + (", ".join(sorted(exercised)) or "none") + ".",
             },
         },
     }
