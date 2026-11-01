@@ -43,3 +43,17 @@ That is the smallest addition that makes AC-02 and AC-16 testable as written. Or
 **Fallback if the pod declines:** change AC-02 to check that each rejected POST returns 400 naming the bad field, without the count check. Change AC-16 to re-GET each of the 100 IDs it created before the restart, and confirm with 404s after the reset. Either way, the acceptance tests won't call `GET /incidents` until this row is marked agreed.
 
 **Decision:** _pending. Record who agreed and the date._
+
+
+## Phase 4 source review (2026-11-01)
+
+The original pod v1.0 PDF, team design PDF and student-facing testing-interface
+PDF have now been supplied and reviewed. See [the contract review](phase4/contract-review.md)
+for exact resolutions and remaining questions. NOT_MATERIAL, the ordinary
+NOT_MATERIAL-to-MATERIAL transition, full decision detail fields and the Eastern
+date boundary are now source-confirmed. The course PDF supplies the tester
+OpenAPI starter (0.4.2), not a separate domain OpenAPI. Remaining pod agreement
+is needed for the 2025 calendar-list mismatch, general businessDays edges,
+NOT_APPLICABLE businessDays, future as_of, duplicate evidence IDs, text limits,
+and determination equal to discovery. Filing representation differences remain
+Phase 5 work. No new shared rules were negotiated by this source review.

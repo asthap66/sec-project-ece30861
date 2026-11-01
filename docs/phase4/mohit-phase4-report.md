@@ -1,5 +1,9 @@
 # Mohit Phase 4 handoff — 2026-11-01
 
+**Updated after source PDFs were supplied:** see [contract review](contract-review.md)
+and the final verification addendum below. They supersede historical missing-artifact,
+provisional-schema and unresolved-state/boundary statements in the initial report.
+
 ## Branch and source inventory
 
 Branch: `mohit-phase4`. Base: fetched `origin/integration`,
@@ -170,3 +174,41 @@ Additional executed checks:
 Commits: the plan carry-forward and the focused tests/CI/report implementation
 are committed on mohit-phase4; use `git log origin/integration..mohit-phase4`
 for exact identifiers (the report does not embed its own commit hash).
+
+## Final source-backed verification addendum
+
+After Mohit supplied all three source PDFs, the suite was aligned with Q3.2,
+Q4, Q5.2 and Q6.2. See [contract-review.md](contract-review.md) for the source
+comparison and unresolved questions. The full state/schema/date-boundary
+blockers in C1/C2/C4 above are historical: NOT_MATERIAL, subsequent MATERIAL,
+currentDecision fields, null deadline and the Eastern date boundary are now
+resolved. Remaining ambiguity is narrower and listed in the contract review.
+The course tester OpenAPI starter is available in the supplied course PDF;
+no independent domain OpenAPI file was supplied.
+
+Final executions on the same isolated Compose database and port-8044 server:
+
+| Command | Result after source alignment |
+| --- | --- |
+| `uv run pytest --collect-only -q` | 308 tests, including 45 Phase 4 |
+| `TEST_DATABASE_URL=<disposable URL> uv run pytest -m 'not acceptance'` | 214 passed, 1 failed, 93 deselected; same existing host/database timestamp assertion |
+| `BASE_URL=<local URL> API_KEY=<local key> ALLOW_DESTRUCTIVE_TESTS=1 TESTER_RESULTS_FILE=/tmp/mohit-contract-phase4.jsonl uv run python -m pytest -m phase4 -p tester.pytest_plugin --junitxml=/tmp/mohit-contract-phase4.xml` | 39 failed, 6 passed, 263 deselected; elapsed 2.442 seconds; all failures encounter missing feature routes |
+| Same local URL/key and destructive opt-in, `uv run pytest -m 'acceptance and not phase4'` | 47 passed, 1 local HTTPS skip, 260 deselected |
+| `uv run ruff check .` | Passed |
+| `uv run ruff format --check .` | Passed, 99 files |
+| `uv run mypy` | Passed, 63 source files |
+| `git diff --check` | Passed |
+
+Eight added cases cover empty required text, NOT_MATERIAL-to-MATERIAL,
+three Model 3 business-day examples and both sides of Eastern midnight.
+Existing tests now assert the source-defined NOT_MATERIAL enum, nullable
+applicable deadlines, full decision fields, invalid-enum error example and
+field-naming errors. All 45 cases are implemented and executed; only the six
+auth/resource checks pass on the current baseline. These do not prove routes
+exist. No filing-dependent or correction-history completion is claimed.
+
+Mohit authorized pushing the branch and opening a **draft** PR targeting
+integration. The PR explicitly retains the missing-feature failures, repeated
+timestamp failure and informational Phase 4 CI status. No merge or deployment
+is authorized by that action. Follow-up source files remain private local inputs;
+repository documentation records their relevant sections without copying PDFs.

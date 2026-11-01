@@ -1,13 +1,14 @@
 # Phase 4 execution and cross-team preparation
 
-Read [the report](mohit-phase4-report.md) for source limitations and mappings.
+Read [the report](mohit-phase4-report.md) for mappings and executed results, and
+[the source review](contract-review.md) for resolved rules and remaining ambiguities.
 The local selection is `uv run pytest -m phase4`. Full HTTP suite is
 `uv run pytest tests/acceptance`; existing regression is
 `uv run pytest -m 'acceptance and not phase4'`. No parallel pytest workers:
 reset tests and ID reuse require sequential execution against one target.
 
 Before any shared run, Mohit must request the target URL/version, privately
-exchanged target API key, original Phase 2/OpenAPI and holiday artifacts, an
+exchanged target API key, confirmation of the reviewed Phase 2 v1.0 sources and unresolved holiday-year policy, an
 exclusive synthetic-data window, reset permission, restart operator and
 contact, and reciprocal tester details. This document sends no messages.
 

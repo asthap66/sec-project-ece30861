@@ -9,7 +9,7 @@
       "2025-10-02",
       "2025-10-03"
     ],
-    "source": "User reference cases and Phase 4 plan section 5.2; manual fourth-day enumeration; holiday list approval pending"
+    "source": "Phase 2 - Pod (1).pdf Q4 AC-09/10 and Q3.2 Model 3 Eastern-date rule; manual fourth-day enumeration. 2025 dates are explicit AC expectations; shared list only enumerates 2026-27."
   },
   {
     "name": "october-holiday",
@@ -21,7 +21,7 @@
       "2025-10-16",
       "2025-10-17"
     ],
-    "source": "User reference cases and Phase 4 plan section 5.2; manual fourth-day enumeration; holiday list approval pending"
+    "source": "Phase 2 - Pod (1).pdf Q4 AC-09/10 and Q3.2 Model 3 Eastern-date rule; manual fourth-day enumeration. 2025 dates are explicit AC expectations; shared list only enumerates 2026-27."
   },
   {
     "name": "thanksgiving",
@@ -33,7 +33,7 @@
       "2025-12-01",
       "2025-12-02"
     ],
-    "source": "User reference cases and Phase 4 plan section 5.2; manual fourth-day enumeration; holiday list approval pending"
+    "source": "Phase 2 - Pod (1).pdf Q4 AC-09/10 and Q3.2 Model 3 Eastern-date rule; manual fourth-day enumeration. 2025 dates are explicit AC expectations; shared list only enumerates 2026-27."
   },
   {
     "name": "year-boundary",
@@ -45,7 +45,7 @@
       "2026-01-05",
       "2026-01-06"
     ],
-    "source": "User reference cases and Phase 4 plan section 5.2; manual fourth-day enumeration; holiday list approval pending"
+    "source": "Phase 2 - Pod (1).pdf Q4 AC-09/10 and Q3.2 Model 3 Eastern-date rule; manual fourth-day enumeration. 2025 dates are explicit AC expectations; shared list only enumerates 2026-27."
   },
   {
     "name": "weekend",
@@ -57,7 +57,7 @@
       "2025-10-08",
       "2025-10-09"
     ],
-    "source": "User reference cases and Phase 4 plan section 5.2; manual fourth-day enumeration; holiday list approval pending"
+    "source": "Phase 2 - Pod (1).pdf Q4 AC-09/10 and Q3.2 Model 3 Eastern-date rule; manual fourth-day enumeration. 2025 dates are explicit AC expectations; shared list only enumerates 2026-27."
   },
   {
     "name": "utc-midnight",
@@ -69,7 +69,7 @@
       "2025-10-02",
       "2025-10-03"
     ],
-    "source": "User reference cases and Phase 4 plan section 5.2; manual fourth-day enumeration; holiday list approval pending"
+    "source": "Phase 2 - Pod (1).pdf Q4 AC-09/10 and Q3.2 Model 3 Eastern-date rule; manual fourth-day enumeration. 2025 dates are explicit AC expectations; shared list only enumerates 2026-27."
   },
   {
     "name": "equivalent-offset",
@@ -81,6 +81,6 @@
       "2025-10-02",
       "2025-10-03"
     ],
-    "source": "User reference cases and Phase 4 plan section 5.2; manual fourth-day enumeration; holiday list approval pending"
+    "source": "Phase 2 - Pod (1).pdf Q4 AC-09/10 and Q3.2 Model 3 Eastern-date rule; manual fourth-day enumeration. 2025 dates are explicit AC expectations; shared list only enumerates 2026-27."
   }
 ]

@@ -5040,3 +5040,10 @@ summary counts, and test/integration instructions. See
 [the detailed report](docs/phase4/mohit-phase4-report.md) for executed results,
 contract dependencies, and remaining release checks. This does not mark Astha's
 or Srihari's features complete, or claim deployed/cross-team Phase 4 success.
+
+
+Mohit source-review follow-up: the supplied v1.0 PDFs now confirm the decision
+schema, NOT_MATERIAL state and subsequent MATERIAL transition, and Eastern
+deadline date boundary. The HTTP suite has 45 Phase 4 cases. See
+[contract review](docs/phase4/contract-review.md) for remaining ambiguities and
+[the report](docs/phase4/mohit-phase4-report.md) for final baseline results.
