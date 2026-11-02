@@ -1,5 +1,9 @@
 # Supplied contract review — 2026-11-01
 
+Historical source review; see [November 2 integrated validation](mohit-final-validation-report.md)
+for current passing implementation, date-range limitation and unresolved pod choices.
+The missing-route statement below describes the original baseline.
+
 Mohit received and read the following source PDFs after the initial test commit:
 
 - `student-facing-spec.docx.pdf`: Cross-team Testing Interface, including the

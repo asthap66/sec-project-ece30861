@@ -77,10 +77,9 @@ jobs:
           ALLOW_DESTRUCTIVE_TESTS: "1"
         run: uv run pytest -m "acceptance and not phase4"
 
-      # Temporary informational selection; make required after feature integration.
+      # Integrated Phase 4 selection: failures now fail this job.
       # Sequential in this job: reset tests never race against Phase 4 writes.
-      - name: Phase 4 acceptance (informational until integration)
-        continue-on-error: true
+      - name: Phase 4 acceptance
         env:
           BASE_URL: http://127.0.0.1:8000
           API_KEY: ci-acceptance-key
