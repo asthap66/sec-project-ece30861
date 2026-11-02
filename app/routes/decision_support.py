@@ -3,22 +3,25 @@
 from typing import Annotated
 
 from fastapi import Depends
+from sqlalchemy.orm import Session
 
+from app.db import get_db
+from app.deadline_calendar import SHARED_CALENDAR
 from app.errors import ApiError
+from app.services.decision_store import SQLAlchemyDecisionRepository
 from app.services.decisions import DeadlineCalculator, DecisionRepository, DecisionService
 
 
-def get_decision_repository() -> DecisionRepository | None:
-    """Integration hook: override with an adapter using Depends(get_db).
-
-    None means the adapter has not been connected, never an in-memory fallback.
-    """
-    return None
+def get_decision_repository(
+    session: Annotated[Session, Depends(get_db)],
+) -> DecisionRepository | None:
+    """PostgreSQL decisions on the request's shared session (never a second one)."""
+    return SQLAlchemyDecisionRepository(session)
 
 
 def get_deadline_calculator() -> DeadlineCalculator | None:
-    """Integration hook for the single shared calendar implementation."""
-    return None
+    """The single shared calendar (app.deadline_calendar, app.holidays)."""
+    return SHARED_CALENDAR
 
 
 def get_optional_decision_service(

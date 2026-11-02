@@ -25,8 +25,11 @@ from sqlalchemy import (
     Computed,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
+    Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -36,6 +39,13 @@ from app.db import Base
 
 INCIDENT_STATUSES = ("OPEN", "NOT_MATERIAL", "MATERIAL_PENDING_FILING", "FILED")
 EVIDENCE_CATEGORIES = ("TECHNICAL", "BUSINESS_IMPACT", "LEGAL", "OTHER")
+DECISIONS = ("MATERIAL", "NOT_MATERIAL")
+
+# Project data cleared by /reset and /test/setup, in one TRUNCATE (so child
+# rows go with their parents). RESTART IDENTITY restarts INC/EVD/DEC numbering.
+RESET_PROJECT_DATA = (
+    "TRUNCATE TABLE decision_evidence, decisions, evidence, incidents RESTART IDENTITY"
+)
 
 
 def _public_id(prefix: str) -> Computed:
@@ -95,6 +105,76 @@ class Evidence(Base):
 
     __table_args__ = (
         CheckConstraint(_one_of("category", EVIDENCE_CATEGORIES), name="category_valid"),
+        # lets decision_evidence check evidence belongs to the decision's incident
+        UniqueConstraint("id", "incident_id", name="evidence_id_incident_key"),
+    )
+
+
+class Decision(Base):
+    """One human materiality decision (REQ-04). Append-only (REQ-07).
+
+    The current decision is the incident's newest row by id (recording order,
+    not determined_at). Status and deadline are not stored: DecisionService
+    derives them on every read from this row and the shared calendar, so they
+    can never disagree with it. incidents.status stays at its Phase 3 value.
+    """
+
+    __tablename__ = "decisions"
+    __mapper_args__ = {"eager_defaults": True}  # fetch public_id/recorded_at on insert
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    public_id: Mapped[str] = mapped_column(String(32), _public_id("DEC"), unique=True)
+    incident_id: Mapped[int] = mapped_column(
+        ForeignKey("incidents.id", ondelete="RESTRICT"), index=True
+    )
+
+    decision: Mapped[str] = mapped_column(String(32))
+    determined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    decided_by: Mapped[str] = mapped_column(Text)
+    rationale: Mapped[str] = mapped_column(Text)
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    evidence_links: Mapped[list["DecisionEvidence"]] = relationship(
+        order_by="DecisionEvidence.position"
+    )
+
+    __table_args__ = (
+        CheckConstraint(_one_of("decision", DECISIONS), name="decision_valid"),
+        UniqueConstraint("id", "incident_id", name="decisions_id_incident_key"),
+    )
+
+
+class DecisionEvidence(Base):
+    """The evidence a decision cites, in the order submitted.
+
+    position keeps the public evidenceIds list exactly as sent, including a
+    repeated ID. Both composite foreign keys carry incident_id, so the
+    database itself refuses evidence from another incident.
+    """
+
+    __tablename__ = "decision_evidence"
+
+    decision_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    position: Mapped[int] = mapped_column(Integer, primary_key=True)
+    incident_id: Mapped[int] = mapped_column(BigInteger)
+    evidence_id: Mapped[int] = mapped_column(BigInteger, index=True)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["decision_id", "incident_id"],
+            ["decisions.id", "decisions.incident_id"],
+            ondelete="RESTRICT",
+            name="decision_evidence_decision_fkey",
+        ),
+        ForeignKeyConstraint(
+            ["evidence_id", "incident_id"],
+            ["evidence.id", "evidence.incident_id"],
+            ondelete="RESTRICT",
+            name="decision_evidence_evidence_fkey",
+        ),
+        CheckConstraint("position >= 0", name="position_nonnegative"),
     )
 
 
