@@ -63,7 +63,10 @@ def database(monkeypatch: pytest.MonkeyPatch, settings_env: None) -> Iterator[st
     command.upgrade(Config("alembic.ini"), "head")
     from sqlalchemy import text
 
+    from app.models import RESET_PROJECT_DATA
+
     with db_module.get_engine().begin() as conn:
-        conn.execute(text("TRUNCATE TABLE evidence, incidents, test_sessions RESTART IDENTITY"))
+        conn.execute(text(RESET_PROJECT_DATA))
+        conn.execute(text("TRUNCATE TABLE test_sessions"))
     yield url
     _clear_caches()

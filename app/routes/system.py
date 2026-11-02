@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.models import RESET_PROJECT_DATA
 
 router = APIRouter(tags=["system"])
 
@@ -33,6 +34,6 @@ def reset(db: Session = Depends(get_db)) -> StatusResponse:  # noqa: B008
     counters, so the next incident after a reset is INC-001 again; in
     PostgreSQL that restart is rolled back too if the transaction fails.
     """
-    db.execute(text("TRUNCATE TABLE evidence, incidents RESTART IDENTITY"))
+    db.execute(text(RESET_PROJECT_DATA))
     db.commit()
     return StatusResponse(status="RESET_COMPLETE")

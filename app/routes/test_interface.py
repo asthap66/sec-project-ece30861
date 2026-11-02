@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.coverage_runtime import session_coverage
 from app.db import get_db
-from app.models import TestSession
+from app.models import RESET_PROJECT_DATA, TestSession
 
 router = APIRouter(prefix="/test", tags=["testing interface"])
 logger = logging.getLogger("app.test_interface")
@@ -68,7 +68,7 @@ async def test_setup(request: Request, db: Session = Depends(get_db)) -> Any:  #
         # One transaction: record the session and clear the project data, so
         # either both happen or neither does.
         db.add(TestSession(session_id=body.session_id))
-        db.execute(text("TRUNCATE TABLE evidence, incidents RESTART IDENTITY"))
+        db.execute(text(RESET_PROJECT_DATA))
         db.commit()
     except IntegrityError:
         db.rollback()  # the same ID was set up concurrently
