@@ -75,3 +75,12 @@ def test_coverage_fields() -> None:
     system = coverage["system"]
     assert (system["covered"], system["total"]) == (3, AC_TOTAL)  # skipped AC-04 not counted
     assert "AC-01" in system["basis"] and "AC-04" not in system["basis"]
+
+
+def test_phase4_summary_does_not_claim_full_verification() -> None:
+    node = "tests/acceptance/test_phase4_decisions.py::test_ac11_deadline_status_without_filing"
+    report = build_report(
+        "phase4", "http://localhost", [node], {node: record(node, "failed")}, CODE
+    )
+    assert report["summary"] == {"pass": 0, "fail": 1, "error": 0, "skip": 0}
+    assert "not full verification" in report["coverage"]["system"]["basis"]

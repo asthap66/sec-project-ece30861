@@ -11,6 +11,8 @@ Lines:
 
 import json
 import os
+import time
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
@@ -67,5 +69,36 @@ def pytest_runtest_logreport(report: pytest.TestReport) -> None:
             "outcome": outcome,
             "message": message,
             "exception": _exception_name(report),
+            "duration_seconds": report.duration,
+        }
+    )
+
+
+_started = 0.0
+
+
+@pytest.hookimpl
+def pytest_sessionstart(session: pytest.Session) -> None:
+    global _started
+    _started = time.monotonic()
+    _write(
+        {
+            "event": "run_started",
+            "timestamp": datetime.now(UTC).isoformat(),
+            "timezone": "UTC",
+            "target_url": os.environ.get("BASE_URL", "unavailable"),
+            "tester_version": os.environ.get("GIT_COMMIT", "unavailable"),
+            "target_version": "unavailable; record X-App-Commit separately",
+        }
+    )
+
+
+@pytest.hookimpl
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    _write(
+        {
+            "event": "run_finished",
+            "duration_seconds": time.monotonic() - _started,
+            "exitstatus": exitstatus,
         }
     )

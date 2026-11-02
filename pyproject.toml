@@ -34,6 +34,7 @@ include = ["app*"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 markers = [
+    "phase4: decision and deadline milestone (missing features fail visibly)",
     "acceptance: black-box tests against a live service (needs BASE_URL; skipped otherwise)",
 ]
 
