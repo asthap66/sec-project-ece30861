@@ -4,7 +4,7 @@ Uses the existing disposable-database fixture and real production app provider.
 No service/session overrides. The fixture migrates and resets the test database.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,6 +15,16 @@ from app.config import TITLE_MAX_LENGTH
 from app.main import create_app
 from app.models import Evidence, Incident
 from tests.infrastructure.test_feature_routes import EVIDENCE, INCIDENT, KEY
+
+
+def database_clock() -> datetime:
+    """The database's own current time. recordedAt comes from the database
+    clock, so comparing it with the host clock fails whenever the two drift
+    (seen with Docker Desktop: database 4 s behind the Mac)."""
+    with db_module.get_session_factory()() as session:
+        moment: datetime | None = session.scalar(select(func.clock_timestamp()))
+    assert moment is not None
+    return moment
 
 
 def counts() -> tuple[int, int]:
@@ -31,7 +41,7 @@ def test_postgres_create_retrieve_evidence_restart_reset(database: str, client: 
     assert created.json() == {"incidentId": "INC-001", "status": "OPEN"}
     other = client.post("/incidents", json=INCIDENT, headers=KEY)
     assert other.json()["incidentId"] == "INC-002"
-    before = datetime.now(UTC)
+    before = database_clock()
     ids = []
     for category in ["TECHNICAL", "TECHNICAL", "TECHNICAL", "BUSINESS_IMPACT"]:
         response = client.post(
@@ -41,7 +51,7 @@ def test_postgres_create_retrieve_evidence_restart_reset(database: str, client: 
         assert set(response.json()) == {"evidenceId", "recordedAt"}
         ids.append(response.json()["evidenceId"])
         recorded = datetime.fromisoformat(response.json()["recordedAt"])
-        assert before <= recorded <= datetime.now(UTC)
+        assert before <= recorded <= database_clock()
     assert ids == ["EVD-001", "EVD-002", "EVD-003", "EVD-004"]
     assert counts() == (2, 4)
     detail = client.get("/incidents/INC-001", headers=KEY).json()
