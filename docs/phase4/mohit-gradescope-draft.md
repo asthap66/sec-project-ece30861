@@ -3,8 +3,7 @@
 Editorial notes (do not paste): Prepared November 2, 2026 UTC. Phase 4 exact
 question text is unavailable locally; labels follow Mohit's supplied assignment
 and historical submission headings. Q4.1–4.4, Q6.2, Q7.2, Q8.1 are evidence-backed
-with explicit limits. Q4.5 and Q6.1 remain pending external execution. Update
-Q4.3/Q4.4 with the final validation PR CI link in the evidence report. All older
+with explicit limits. Q4.5 and Q6.1 remain pending external execution. Enforcing CI passed at source 55777d0; its link appears in Q4.3. All older
 missing-route/clock failures are historical, not current integrated defects.
 
 ## Q4.1 — Test interface, configuration and conformance
@@ -74,8 +73,9 @@ actual historical discovery sent by setup and preserves shared fixtures.
 CI retains Phase 3 checks, disposable PostgreSQL, migrations, persistence and
 performance scripts. The final validation PR removes Phase 4 continue-on-error,
 so failures now fail the job while JUnit/JSONL evidence is still uploaded.
-CI outcome and URL are recorded in docs/phase4/mohit-final-validation-report.md;
-use that final run rather than historical green informational runs. Jobs are
+CI run: https://github.com/asthap66/sec-project-ece30861/actions/runs/41374950049
+(source 55777d0). This run completed successfully, including the enforcing Phase 4 step,
+regression, static, persistence and performance checks. Jobs are
 isolated per workflow run; destructive tests run sequentially within the job.
 This does not isolate separate testers writing to a shared deployment.
 
@@ -86,8 +86,9 @@ GitHub Actions runs static checks before tests, and the changed Phase 4 step
 propagates pytest's nonzero exit code. I did not change repository settings.
 The integration branch-protection query returned 404 and the rulesets query
 returned an empty list, so enforced merge blocking was not established. A failed
-job and a repository rule preventing merges are separate claims. CI completion
-is recorded in the final validation report; deployment remains a separate action.
+job and a repository rule preventing merges are separate claims. CI at source 55777d0 completed successfully:
+https://github.com/asthap66/sec-project-ece30861/actions/runs/41374950049.
+Deployment remains a separate action.
 
 ## Q4.5 — Full suite against the deployed version
 
@@ -97,7 +98,7 @@ The November 2 read-only API check still reported e9dd257 with no Phase 4 routes
 I therefore have no Phase 4 deployed full-suite result to report. Local results
 are 92 HTTP passes, one local HTTPS skip, and 45/45 in the Phase 4 selection;
 they are not deployed evidence. Local performance used 100 incidents and 200
-sequential requests: all were under one second, no errors, p95 49.3 ms. Exact
+sequential requests: all were under one second, no errors, p95 46.8 ms. Exact
 local decision fields and derived state/deadline survived a process restart;
 known IDs returned 404 after reset and all four project tables were empty.
 These are local persistence/reset observations, not Cloud Run measurements.

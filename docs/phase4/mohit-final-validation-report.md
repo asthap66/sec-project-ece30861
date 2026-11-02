@@ -168,3 +168,29 @@ report mapping check; this explains the difference from Srihari's 323 count.
 Final Ruff format check after removing one extra blank line passes with 117
 files; lint, mypy (74 files) and diff whitespace also pass. No requirement or
 calendar expected date was relaxed. Local services were stopped after validation.
+
+
+## PR and clean performance follow-up
+
+Focused implementation commit `55777d0ae15632b95f16d0008189aab152d29552`,
+PR https://github.com/asthap66/sec-project-ece30861/pull/16, targeting integration.
+CI run https://github.com/asthap66/sec-project-ece30861/actions/runs/41374950049
+runs that commit with enforcing Phase 4 handling. The first performance run
+loaded 100 incidents after acceptance, without asserting the database was
+otherwise empty. To remove that uncertainty, repeated the existing script
+after an explicit local-only reset: November 2 01:55:58 UTC, exit 0, 200/200
+under one second, zero errors, p50 19.4 ms, p95 46.8 ms, max 90.5 ms. Direct
+SQL confirmed exactly 100 incidents. Use this clean run for REQ-15 conditions;
+it contains incident/evidence/health requests, not a benchmark of decision writes.
+[Clean performance evidence](evidence/local-clean-performance.json). Production
+source remains the integrated implementation; follow-up commit changes only
+validation/reporting/docs. Earlier performance evidence is retained separately.
+
+CI **completed successfully** for `55777d0` at the run above. Inspected step
+outcomes: Ruff lint/format, mypy, non-acceptance tests, Phase 3 HTTP, enforcing
+Phase 4 HTTP, evidence upload, AC-16 restart persistence and performance all
+succeeded. This is actual GitHub execution, not a locally inferred CI result.
+The final documentation/evidence follow-up will trigger a separate head run;
+its status must be checked independently. No merge protection claim follows
+from a successful job. No merges, deployments, settings changes, submissions
+or messages were performed.
