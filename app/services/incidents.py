@@ -14,6 +14,7 @@ from app.schemas import (
     IncidentDetail,
     IncidentStatus,
 )
+from app.services.decisions import DecisionService
 
 
 class IncidentNotFoundError(ApiError):
@@ -101,13 +102,18 @@ class SQLAlchemyIncidentRepository:
 
 
 class IncidentService:
-    def __init__(self, repository: IncidentRepository) -> None:
+    def __init__(
+        self, repository: IncidentRepository, decisions: DecisionService | None = None
+    ) -> None:
         self.repository = repository
+        self.decisions = decisions
 
     def create_incident(self, data: IncidentCreate) -> IncidentDetail:
         return self.repository.create_incident(data)
 
     def get_incident(self, incident_id: str) -> IncidentDetail:
+        if self.decisions is not None:
+            return self.decisions.get_incident(incident_id)
         incident = self.repository.get_incident(incident_id)
         if incident is None:
             raise IncidentNotFoundError(incident_id)

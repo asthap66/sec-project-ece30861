@@ -91,6 +91,8 @@ def validation_error(errors: Sequence[Any]) -> JSONResponse:
     if field is None:
         return error_response(400, "INVALID_BODY", f"request body is invalid: {reason}")
     code = f"INVALID_{_upper_snake(field)}"
+    if field == "decision" and reason == "decision must be MATERIAL or NOT_MATERIAL":
+        return error_response(400, code, reason)
     if first.get("type") == "missing":
         return error_response(400, code, f"{field} is required")
     return error_response(400, code, f"{field}: {reason}")

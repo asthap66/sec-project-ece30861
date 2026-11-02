@@ -2,6 +2,10 @@
 
 Owner: Astha; Srihari reviews architecture and storage. Feeds submission Q5.
 
+Phase 4: [decision state, snapshot and request-flow models](phase4-decisions.md)
+describe the implemented feature interfaces and pending persistence/calendar
+integration. The Phase 3 notes below retain their original verification scope.
+
 The Phase 3 API schemas and service interfaces are implemented. See the
 [feature contract and integration handoff](../incident-evidence.md) for complete
 JSON fields and current limitations. The feature repository now uses Person 1's
