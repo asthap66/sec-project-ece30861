@@ -5,7 +5,7 @@ Required text rejects blank values but is preserved.
 """
 
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from typing import Annotated
 
@@ -146,12 +146,79 @@ class EvidenceResponse(APISchema):
         return value.astimezone(UTC)
 
 
-class IncidentDetail(IncidentResponse):
-    """Retrieved incident, including evidence and Phase 3 null placeholders.
+class MaterialityDecision(StrEnum):
+    MATERIAL = "MATERIAL"
+    NOT_MATERIAL = "NOT_MATERIAL"
 
-    Later-phase structures are deliberately not defined.
-    """
+
+class DecisionCreate(APISchema):
+    decision: MaterialityDecision
+    determined_at: RequestTimestamp
+    decided_by: RequiredText
+    rationale: RequiredText
+    evidence_ids: list[RequiredText] = Field(min_length=1, strict=True)
+
+    @field_validator("decision", mode="before")
+    @classmethod
+    def validate_decision(cls, value: object) -> object:
+        if value not in ("MATERIAL", "NOT_MATERIAL"):
+            raise ValueError("decision must be MATERIAL or NOT_MATERIAL")
+        return value
+
+    @field_validator("decided_by", "rationale")
+    @classmethod
+    def reject_blank_text(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Must not be blank")
+        return value
+
+    @field_validator("evidence_ids")
+    @classmethod
+    def reject_blank_ids(cls, value: list[str]) -> list[str]:
+        if any(not item.strip() for item in value):
+            raise ValueError("evidenceIds must contain nonblank IDs")
+        return value
+
+    @field_validator("determined_at")
+    @classmethod
+    def normalize_timestamp(cls, value: datetime) -> datetime:
+        return value.astimezone(UTC)
+
+
+class DecisionDetail(DecisionCreate):
+    """Current human decision; deadline is computed by the shared calculator."""
+
+    decision_id: str
+    deadline: date | None = None
+
+
+class DecisionCreated(APISchema):
+    decision_id: str
+    status: IncidentStatus
+    deadline: date | None
+
+
+class DeadlineState(StrEnum):
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+    PENDING = "PENDING"
+    OVERDUE = "OVERDUE"
+
+
+class DeadlineStatus(APISchema):
+    status: DeadlineState
+    deadline: date | None
+    business_days: int = Field(strict=True, ge=0)
+
+
+class DeadlineQuery(APISchema):
+    """Explicit query alias keeps errors in the public as_of vocabulary."""
+
+    as_of: RequestTimestamp | None = Field(default=None, alias="as_of")
+
+
+class IncidentDetail(IncidentResponse):
+    """Incident, linked evidence and current decision; filings remain Phase 5."""
 
     evidence: list[EvidenceResponse] = Field(default_factory=list)
-    current_decision: None = None
+    current_decision: DecisionDetail | None = None
     filing: None = None
