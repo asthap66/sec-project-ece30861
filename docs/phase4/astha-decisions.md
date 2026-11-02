@@ -67,6 +67,29 @@ Remaining pod decisions are not resolved by this branch:
 - Text maxima for new decision fields: none invented.
 - Exact codes/messages beyond the supplied enum example.
 
+### Calendar examples to retain at integration
+
+These are independent source expectations, not calculations implemented by
+Astha's route or the fixed test calendar. Srihari's real calendar must satisfy
+them before calendar conformance is claimed:
+
+| Source | Eastern determination date | Deadline |
+| --- | --- | --- |
+| Q5.1 decision example | 2026-09-22 | 2026-09-28 |
+| Model 3 example | 2026-09-28 | 2026-10-02 |
+| AC-09 | 2025-09-29 | 2025-10-03 |
+| AC-10 October holiday | 2025-10-10 | 2025-10-17 |
+| AC-10 Thanksgiving | 2025-11-25 | 2025-12-02 |
+| AC-10 year boundary | 2025-12-30 | 2026-01-06 |
+| AC-10 weekend | 2025-10-04 | 2025-10-09 |
+
+Model 3's 2026-10-02 deadline is PENDING with one business day left on October 1,
+OVERDUE by one business day on October 5, and OVERDUE by two on October 6.
+PENDING includes the whole Eastern due date; the next Eastern calendar date
+is OVERDUE. The determination date is day zero. The calendar provider owns the
+named timezone and shared holiday list; no permanent UTC offset or inferred
+holiday list is introduced here.
+
 ## Dependency interfaces for Srihari
 
 Typed protocols are in `app/services/decisions.py`. Integration hooks are in
@@ -180,6 +203,13 @@ Commands ran in the existing Python 3.12 project virtual environment:
 | `python -m ruff format --check .` | Passed; 101 files |
 | `python -m mypy` | Passed; 67 source files |
 | `git diff --check` | Passed |
+
+The requested non-acceptance selection was also rerun before publication:
+`python -m pytest -m "not acceptance" -p no:cacheprovider` returned
+**249 passed, 26 skipped, 48 deselected, 0 failed**. Ruff lint/format and mypy
+passed again. These use `.venv/Scripts/python.exe -m` equivalents because `uv`
+is unavailable on PATH. The existing feature commit remains unchanged; this
+follow-up adds the explicit calendar integration examples and publication record.
 
 The 74 skips comprise 48 live acceptance cases without `BASE_URL` and 26
 PostgreSQL cases without a disposable `TEST_DATABASE_URL`. Docker and uv were
