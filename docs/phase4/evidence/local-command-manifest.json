@@ -1,0 +1,49 @@
+[
+  {
+    "name": "http",
+    "command": [
+      "uv",
+      "run",
+      "python",
+      "-m",
+      "pytest",
+      "-m",
+      "acceptance",
+      "--junitxml=/tmp/mohit-final-http.xml"
+    ],
+    "start": "2026-11-02T01:51:25.525887+00:00",
+    "end": "2026-11-02T01:51:33.291339+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "phase4",
+    "command": [
+      "uv",
+      "run",
+      "python",
+      "-m",
+      "pytest",
+      "-m",
+      "phase4",
+      "-p",
+      "tester.pytest_plugin",
+      "--junitxml=/tmp/mohit-final-phase4.xml"
+    ],
+    "start": "2026-11-02T01:51:33.291396+00:00",
+    "end": "2026-11-02T01:51:40.286129+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "performance",
+    "command": [
+      "uv",
+      "run",
+      "python",
+      "-m",
+      "scripts.performance"
+    ],
+    "start": "2026-11-02T01:51:40.286186+00:00",
+    "end": "2026-11-02T01:51:46.583693+00:00",
+    "exit_code": 0
+  }
+]

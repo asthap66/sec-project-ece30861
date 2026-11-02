@@ -84,3 +84,11 @@ def test_phase4_summary_does_not_claim_full_verification() -> None:
     )
     assert report["summary"] == {"pass": 0, "fail": 1, "error": 0, "skip": 0}
     assert "not full verification" in report["coverage"]["system"]["basis"]
+
+
+def test_calendar_parameter_mapping_distinguishes_ac09_and_ac10() -> None:
+    prefix = "test_phase4_decisions.py::test_ac09_material_decision_calendar"
+    for case in ("october-holiday", "thanksgiving", "year-boundary", "weekend"):
+        assert acceptance_criterion(f"{prefix}[{case}]") == "AC-10"
+    for case in ("standard", "utc-midnight", "equivalent-offset"):
+        assert acceptance_criterion(f"{prefix}[{case}]") == "AC-09"

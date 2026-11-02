@@ -39,6 +39,11 @@ _SYSTEM_5XX = re.compile(r"\bassert (5\d\d) (==|in) ")
 
 def acceptance_criterion(nodeid: str) -> str | None:
     name = nodeid.split("::")[-1]
+    if name.startswith("test_ac09_material_decision_calendar[") and any(
+        f"[{case}]" in name
+        for case in ("october-holiday", "thanksgiving", "year-boundary", "weekend")
+    ):
+        return "AC-10"
     for pattern, template in _AC_RULES:
         match = pattern.search(name)
         if match:

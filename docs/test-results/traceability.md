@@ -2,6 +2,11 @@
 
 Owner: Mohit. Feeds submission Q4.
 
+Historical Phase 3 table below. Current integrated Phase 4 mapping/results are
+in [the final validation report](../phase4/mohit-final-validation-report.md) and
+[Q4.2 draft](../phase4/mohit-gradescope-draft.md); later features are no longer
+missing from the local integration source.
+
 This table covers local, CI and deployed runs, and each run is recorded in this folder. "Final" means the deployed commit `f551649`. "Earlier" means `ed5f449` (acceptance) or `f2b607c` (AC-16).
 
 | Criterion | Tests | Status |

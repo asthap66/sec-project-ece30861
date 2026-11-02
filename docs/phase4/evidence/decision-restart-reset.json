@@ -1,0 +1,65 @@
+{
+  "incident": "INC-001",
+  "other": "INC-002",
+  "snapshot": {
+    "incidentId": "INC-001",
+    "title": "Synthetic final validation",
+    "description": "Local only",
+    "discoveredAt": "2020-01-01T00:00:00Z",
+    "reporterName": "Synthetic reviewer",
+    "status": "MATERIAL_PENDING_FILING",
+    "evidence": [
+      {
+        "evidenceId": "EVD-001",
+        "category": "TECHNICAL",
+        "summary": "Synthetic evidence",
+        "source": "Local validation",
+        "collectedAt": "2020-01-02T00:00:00Z",
+        "recordedAt": "2026-11-02T01:52:03.036292Z"
+      }
+    ],
+    "currentDecision": {
+      "decision": "MATERIAL",
+      "determinedAt": "2025-09-29T16:00:00Z",
+      "decidedBy": "Synthetic human",
+      "rationale": "Explicit human choice",
+      "evidenceIds": [
+        "EVD-001",
+        "EVD-001"
+      ],
+      "decisionId": "DEC-001",
+      "deadline": "2025-10-03"
+    },
+    "filing": null
+  },
+  "counts_before": {
+    "incidents": 2,
+    "evidence": 2,
+    "decisions": 1,
+    "links": 2
+  },
+  "date_range_error": {
+    "error": "DATE_OUT_OF_RANGE",
+    "message": "deadline calendar covers 2025-2027 only; got 2024-09-29"
+  },
+  "as_of_range_error": {
+    "error": "DATE_OUT_OF_RANGE",
+    "message": "deadline calendar covers 2025-2027 only; got 2028-01-01"
+  },
+  "no_decision": {
+    "status": "NOT_APPLICABLE",
+    "deadline": null,
+    "businessDays": 0
+  },
+  "restart_match": true,
+  "known_ids_after_reset": [
+    404,
+    404
+  ],
+  "counts_after": {
+    "incidents": 0,
+    "evidence": 0,
+    "decisions": 0,
+    "links": 0
+  }
+}
