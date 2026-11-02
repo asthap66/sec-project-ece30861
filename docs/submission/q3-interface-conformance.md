@@ -42,8 +42,8 @@ Record real observations only (README §9).
 | Wrong-state operations → 409 (REQ-08) | **No**, Phase 4 (no state-changing operations yet) | — |
 | Requests RFC 3339 with offset; responses in UTC (REQ-14) | **Yes** | `discoveredAt: 2026-09-21T14:30:00-04:00` comes back as `2026-09-21T18:30:00Z`; `tests/unit/test_schemas.py`, `test_database.py::test_timestamps_keep_the_instant_and_are_timezone_aware` |
 | IDs `INC-001` / `EVD-001` | **Yes** (database-generated) | `test_database.py::test_ids_have_the_contract_format` |
-| Data kept across restarts until reset (REQ-15) | **Yes**, deployed (`f2b607c`; not re-run on `f551649`) | 2026-10-18: 100/100 incidents intact after a Cloud Run restart (new revision); all created IDs gave 404 after reset (`scripts/check_persistence.py`) |
-| 95% of requests within 1 s at 100 incidents (REQ-15) | **Yes**, deployed (`f2b607c`; not re-run on `f551649`) | 2026-10-18: 200/200 within 1 s; p50 48 ms, p95 61 ms (`scripts/performance.py`) |
+| Data kept across restarts until reset (REQ-15) | **Yes**, deployed (`f551649`, 2026-10-19; also `f2b607c`) | 100/100 incidents intact after a Cloud Run restart (new revision); all created IDs gave 404 after reset (`scripts/check_persistence.py`) |
+| 95% of requests within 1 s at 100 incidents (REQ-15) | **Yes**, deployed (`f551649`, 2026-10-19; also `f2b607c`) | 200/200 within 1 s; on `f551649` p50 46.4 ms, p95 65.0 ms; on `f2b607c` p50 48 ms, p95 61 ms (`scripts/performance.py`) |
 | Deployed over HTTPS (REQ-13) | **Yes** | https://incident-api-356019173418.us-central1.run.app; AC-14 `test_deployment_uses_https` passes; `http://` redirects to `https://` |
 
 ## Our choices where the contract is silent

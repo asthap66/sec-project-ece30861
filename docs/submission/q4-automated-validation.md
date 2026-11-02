@@ -10,7 +10,8 @@ Lead: Mohit. This draft matches `docs/submission/mohit-gradescope-ready.md`, whi
 | Our tester | https://incident-tester-356019173418.us-central1.run.app | `GET /health` returned 200 |
 | CI run on the deployed commit | [run 39182054445](https://github.com/asthap66/sec-project-ece30861/actions/runs/39182054445), `f551649`, success | GitHub Actions |
 | Latest CI run on `integration` | [run 39185515218](https://github.com/asthap66/sec-project-ece30861/actions/runs/39185515218), `a520f25`, success | GitHub Actions |
-| Older deployments with results | `ed5f449` (acceptance), `f2b607c` (AC-16 persistence and performance) | Q2 and `docs/test-results/2026-10-18-deployed.md` |
+| AC-16 on the final version | Srihari, 2026-10-19 02:10 to 02:11 UTC, Mohit's scripts | `docs/test-results/2026-10-19-ac16-deployed.md` |
+| Older deployments with results | `ed5f449` (acceptance), `f2b607c` (AC-16) | Q2 and `docs/test-results/2026-10-18-deployed.md` |
 
 **Changes between `f2b607c` and `f551649`:**
 - Deployment scripts and the `X-App-Commit` header.
@@ -50,7 +51,7 @@ No instructor OpenAPI file was available, so both teams built from the Phase 2 p
 | AC-05 (REQ-03) | `test_ac05_evidence_is_stored_and_returned_unchanged[6 fixtures]`, `test_invalid_evidence_is_rejected_and_not_attached[7 fixtures]` | BUSINESS_IMPACT, LEGAL, OTHER and TECHNICAL returned unchanged | 400 naming the field, and a follow-up GET shows nothing attached | Future `collectedAt` is allowed (the contract only forbids future discovery) |
 | REQ-07 part of AC-08 | `test_stored_incident_cannot_be_edited_or_deleted[PUT, PATCH, DELETE]` | n/a | 405 and the incident unchanged | **Only the no-edit/no-delete half.** Correction history (REQ-06) is Phase 4/5 and has no tests |
 | AC-14 (REQ-13) | `test_health_is_public`, `test_authenticated_route_rejects_bad_key[missing, wrong]`, `test_authenticated_route_accepts_valid_key`, `test_deployment_uses_https`, `test_401_uses_error_format[2]`, `test_health_body_has_status` | Health without a key, valid key accepted | 401 `{error, message}` for missing and wrong key | HTTPS check skips for local http targets |
-| AC-16 (REQ-14, REQ-15) | `test_reset_requires_key[2]`, `test_reset_succeeds_and_is_repeatable` (destructive, opt-in); `scripts/check_persistence.py`; `scripts/performance.py` | Reset gives `RESET_COMPLETE`; 100/100 after restart; at least 95% of 200 requests within 1 s | Reset without a key gives 401 | "No incidents remain after reset" is only checked for the IDs we created. That doesn't prove other records are gone. The DB-level proof is `test_database.py::test_reset_clears_everything_and_restarts_ids` (tables empty) |
+| AC-16 (REQ-14, REQ-15) | `test_reset_requires_key[2]`, `test_reset_succeeds_and_is_repeatable` (destructive, opt-in); `scripts/check_persistence.py`; `scripts/performance.py` | Reset gives `RESET_COMPLETE`; 100/100 after restart (final `f551649`); 200/200 within 1 s | Reset without a key gives 401 | "No incidents remain after reset" is only checked for the IDs we created. That doesn't prove other records are gone. The DB-level proof is `test_database.py::test_reset_clears_everything_and_restarts_ids` (tables empty) |
 
 **Why the expected outputs are trustworthy:**
 - **They come from the shared contract, not from our code.** Every expected value comes from the pod contract text, and the fixture JSON (`tests/fixtures/data/*.json`) stores its expected result next to its input.
@@ -101,7 +102,8 @@ CI reports failures, but a failing check doesn't block a merge or a deploy. In p
 | --- | --- | --- |
 | Full acceptance suite through our deployed tester (`/test/setup`, `/test/run`, `/test/report`), reset tests included | Srihari, using Mohit's suite (2026-10-18) | **48 pass**, 0 fail. Code coverage 135 of 522 app lines (from `/test/report`). Component coverage null (the pod spec defines no components). System coverage: 8 of 16 ACs had at least one test run (AC-01, 02, 03, 04, 05, 08, 14, 16). This doesn't mean 8 ACs are fully met: AC-08 only covers the 405 half, and AC-16 only covers reset |
 | Keyless acceptance subset: `BASE_URL=<our system> uv run pytest -m acceptance`, no `API_KEY` | Mohit, 2026-10-19 01:55 UTC, suite at `a520f25` | **7 passed, 0 failed, 41 skipped** (the skipped tests need a key or are destructive). Health public, missing/wrong key gives 401 in the right format, HTTPS |
-| AC-16 restart persistence and 200-request timing | n/a | **PENDING.** Not run on `f551649`. It needs the key, a Cloud Run restart and a reset, all coordinated by Srihari |
+| AC-16: `check_persistence create`, restart (new revision of the same image, `incident-api-00006-qsn` → `00007-29v`), `verify`, then `scripts.performance` (100 incidents, 200 sequential requests, seed 30861), then `check_persistence reset` | Srihari, using Mohit's scripts, 2026-10-19 02:10:19 to 02:11:09 UTC, client commit `306b55a`, laptop on the Purdue network | **Pass.** Persistence 100/100 intact. Timing 200/200 within 1 s (needs 95%), 0 errors; p50 46.4 ms, p95 65.0 ms, max 171.9 ms. Reset: all 100 created IDs gone. `X-App-Commit` was `f551649` before and after the restart. Cloud Run logs show only our client during this run |
+| AC-16 first attempt (02:08:52 UTC) | Srihari | **Invalid, not counted.** Persistence found 92/100 because the other team's tester was running a session on our system (02:07:17 to 02:09:17 UTC) and sent 24 `POST /reset` calls during our create step. The IDs restarted at `INC-001` partway through, and there were titles our scripts never create. Timing (200/200, p50 50.3 ms) and reset passed. This was a scheduling clash on one shared dataset, not a persistence fault |
 
 **Older deployments (not the final version):**
 
