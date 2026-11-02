@@ -1,6 +1,7 @@
 """REQ-04/05/08/09/10. Contract evidence and unresolved assertions: docs/phase4/."""
 
 import json
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -10,7 +11,7 @@ import pytest
 from tests.acceptance.assertions import assert_error_body, assert_names_field, assert_utc_instant
 from tests.acceptance.client import ApiClient, Auth
 from tests.acceptance.test_ac01_05_incidents_evidence import attach, create_incident, get_incident
-from tests.fixtures.data import VALID_EVIDENCE
+from tests.fixtures.data import VALID_EVIDENCE, VALID_INCIDENTS
 
 pytestmark = [
     pytest.mark.acceptance,
@@ -22,8 +23,20 @@ CALENDAR = json.loads(
 )
 
 
+def create_phase4_incident(api: ApiClient) -> str:
+    """Use historical discovery for 2025 decisions without changing shared cases."""
+    template = VALID_INCIDENTS[0]
+    discovery = "2020-01-01T00:00:00Z"
+    case = replace(
+        template,
+        body={**template.body, "discoveredAt": discovery},
+        expected={**template.expected, "discoveredAt": discovery},
+    )
+    return create_incident(api, case)
+
+
 def setup_decision(api: ApiClient) -> tuple[str, dict[str, Any]]:
-    incident = create_incident(api)
+    incident = create_phase4_incident(api)
     evidence = attach(api, incident, VALID_EVIDENCE[0])
     return incident, {
         "decision": "MATERIAL",
@@ -118,7 +131,7 @@ def test_ac15_second_ordinary_decision_preserves_original(api: ApiClient) -> Non
 
 
 def test_ac07_evidence_does_not_decide(api: ApiClient) -> None:
-    incident = create_incident(api)
+    incident = create_phase4_incident(api)
     evidence = dict(VALID_EVIDENCE[0].body)
     evidence["summary"] = "Synthetic catastrophic outage and severe financial loss"
     assert api.post(f"/incidents/{incident}/evidence", json=evidence).status_code == 201

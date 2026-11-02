@@ -212,3 +212,60 @@ integration. The PR explicitly retains the missing-feature failures, repeated
 timestamp failure and informational Phase 4 CI status. No merge or deployment
 is authorized by that action. Follow-up source files remain private local inputs;
 repository documentation records their relevant sections without copying PDFs.
+
+## Calendar setup correction for PR #13
+
+Teammates identified a test bug in `setup_decision()`: it used the default
+`VALID_INCIDENTS[0]`, whose discovery is September 21, 2026, with a default
+September 29, 2025 determination and seven 2025 calendar cases. A conforming
+decision endpoint would reject those supposed successes with 400. The earlier
+404 missing-route runs stopped before decision validation and **did not establish
+that all fixtures or success requests were valid**. The earlier fixture test
+checked manual dates against a separate historical constant, not the discovery
+actually sent by `setup_decision()`. That gap is corrected here.
+
+`create_phase4_incident()` now copies the source Case and both its body/expected
+dictionaries before overriding discovery with `2020-01-01T00:00:00Z`.
+`setup_decision()` uses that copy for all its callers. The evidence-only AC-07
+case also uses it, so its historical as_of is after discovery. The post-reset
+fresh-incident assertion has no determination/as_of and retains the Phase 3
+fixture. No shared fixture, reference determination or expected deadline changed.
+The explicit 1900 before-discovery rejection remains before discovery; the
+future-decision rejection still generates now plus 365 days.
+
+Contract check: REQ-02/Q5.2 require timezone-aware nonfuture discovery;
+REQ-05 requires determination not before discovery or in the future. The
+strictly earlier historical discovery avoids the unresolved equality case.
+The existing evidence contract imposes no collectedAt-versus-determination
+ordering requirement (`docs/intra-pod-spec.md` and `docs/incident-evidence.md`);
+no extra timestamp restriction was invented. All shared setup callers,
+including NOT_MATERIAL, repeated decisions, pending/overdue, Model 3 and Eastern
+boundary success cases, were inspected for chronology.
+
+Added `test_phase4_setup_chronology_and_shared_fixture_isolation` exercises
+the actual setup helper using the existing MockTransport client pattern. It
+captures discovery sent on two calls, confirms shared cases stay unchanged,
+checks all calendar/default/Model 3 valid determinations are later and historical,
+and checks the before-discovery input still predates discovery. This is a
+regression check for test setup only, not evidence that feature routes work.
+
+Actual verification on the unchanged production baseline, disposable Compose
+project `mohit-phase4`/PostgreSQL port 55434, local API port 8044:
+
+| Command | Result |
+| --- | --- |
+| `uv run pytest tests/fixtures tests/tester -q` | 60 passed |
+| `uv run pytest --collect-only -q` | 309 collected; 45 Phase 4 unchanged |
+| Local BASE_URL/API_KEY and ALLOW_DESTRUCTIVE_TESTS=1, `uv run pytest -m 'acceptance and not phase4'` | 47 passed, 1 local HTTPS skip, 261 deselected |
+| Same local settings, `uv run python -m pytest -m phase4 --junitxml=/tmp/mohit-chronology-phase4.xml` | 39 failed, 6 passed, 264 deselected; all failures still encounter absent decision/deadline routes |
+| Local DATABASE_URL/API_KEY, `uv run alembic upgrade head` | Passed |
+| `uv run ruff check .` | Passed |
+| `uv run ruff format --check .` | Passed, 99 files |
+| `uv run mypy` | Passed, 63 source files |
+| `git diff --check` | Passed |
+
+The existing Starlette/httpx deprecation warning remains. The historical DB
+clock/timestamp regression failure is not resolved or rerun by this focused
+fix. No production feature, CI behavior, migration, reference calendar data,
+merge or deployment change is included. Local server/container were stopped
+after verification. The fix is committed and pushed to the existing PR #13.
