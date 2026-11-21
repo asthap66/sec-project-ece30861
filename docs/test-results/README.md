@@ -4,6 +4,12 @@ Owner: Mohit. Feeds submission Q4 and Q6.
 
 Record real runs only. For each run, include: commit/tag, date, target (local, our deployment, or the other team's deployment), totals, failures, skips, and issue owners.
 
+For Phase 5, [the requirement matrix](../phase5/requirement-test-matrix.md)
+separates validated independent fixture inputs from unimplemented route
+acceptance. Save actual local/deployed JUnit and JSONL files only after those
+runs; use the [cross-team runbook](../phase5/cross-team-runbook.md) for both
+testing directions.
+
 ## Runs
 
 | Date | Target | Result |
