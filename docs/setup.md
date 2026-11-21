@@ -52,6 +52,8 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy
 uv run pytest
+uv run pytest --collect-only -q
+uv run pytest -m "phase5 and not acceptance"
 ```
 
 Tests that need a database (`tests/infrastructure/test_database.py` and
@@ -79,6 +81,12 @@ CI (`.github/workflows/ci.yml`) runs on pushes to `main` and `integration`, and 
 - Runs an AC-16 smoke test against that app: persistence across an app restart, reset, and response time.
 
 Runs against a deployed service are done separately and are never triggered from CI.
+
+The `phase5` selection currently validates independent scenario fixtures only.
+It produces JUnit and JSONL artifacts in CI and fails the job if those checks
+fail. It does not include Phase 5 route acceptance tests yet: correction,
+filing and timeline endpoints and final request/response schemas have not been
+merged. See [Phase 5 test matrix](phase5/requirement-test-matrix.md).
 
 ## Current limitations
 

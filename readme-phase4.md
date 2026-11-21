@@ -258,7 +258,6 @@ def describe_deadline(current_decision, as_of, holiday_dates):
     """Return domain status and business-day information."""
 
 
-
 def record_decision(session, incident_id, payload, now):
     """Validate and persist one decision atomically."""
 ```

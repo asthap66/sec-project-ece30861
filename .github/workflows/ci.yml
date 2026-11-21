@@ -98,6 +98,23 @@ jobs:
             phase4-results.xml
             phase4-events.jsonl
 
+      # Independent Phase 5 fixture checks are enforceable now. No API
+      # conformance is inferred from this selection while routes are absent.
+      - name: Phase 5 fixture validation
+        run: |
+          export TESTER_RESULTS_FILE="$PWD/phase5-events.jsonl"
+          export GIT_COMMIT="$GITHUB_SHA"
+          uv run python -m pytest -m "phase5 and not acceptance" -p tester.pytest_plugin --junitxml=phase5-results.xml
+
+      - name: Upload Phase 5 fixture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5-fixture-results
+          path: |
+            phase5-results.xml
+            phase5-events.jsonl
+
       # AC-16 smoke run against the in-job app: restart persistence, reset, and
       # response time. Real results come from runs against the deployment.
       - name: AC-16 persistence across an app restart
