@@ -20,7 +20,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from app.auth import API_KEY_HEADER, ApiKeyMiddleware
 from app.coverage_runtime import session_coverage
 from app.errors import register_error_handlers
-from app.routes import decisions, evidence, incidents, system, test_interface
+from app.routes import decisions, evidence, incidents, phase5, system, test_interface
 
 logger = logging.getLogger("app.requests")
 
@@ -121,6 +121,7 @@ def create_app() -> FastAPI:
     application.include_router(incidents.router)
     application.include_router(evidence.router)
     application.include_router(decisions.router)
+    application.include_router(phase5.router)
     # Middleware runs outermost-last-added: logging wraps auth, so rejected
     # requests (401) are logged too.
     application.add_middleware(ApiKeyMiddleware)
