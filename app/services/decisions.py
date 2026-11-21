@@ -69,7 +69,7 @@ def utc_now() -> datetime:
 
 def decision_status(incident: IncidentDetail) -> IncidentStatus:
     """Derive state from the human decision; evidence never determines materiality."""
-    if incident.status == IncidentStatus.FILED:
+    if incident.status == IncidentStatus.FILED or incident.filing is not None:
         # Preserve a future filing-aware repository's terminal state.
         return IncidentStatus.FILED
     if incident.current_decision is None:
@@ -108,22 +108,25 @@ class DecisionService:
             )
         return result
 
+    def validate_decision(self, incident: IncidentDetail, data: DecisionCreate) -> None:
+        now = self.clock()
+        if data.determined_at < incident.discovered_at or data.determined_at > now:
+            raise ApiError(
+                400,
+                "INVALID_DETERMINED_AT",
+                "determinedAt must not be before discoveredAt or in the future",
+            )
+        owned = {item.evidence_id for item in incident.evidence}
+        if any(item not in owned for item in data.evidence_ids):
+            raise ApiError(
+                400, "INVALID_EVIDENCE_IDS", "evidenceIds must all belong to this incident"
+            )
+
     def record_decision(self, incident_id: str, data: DecisionCreate) -> DecisionCreated:
         # Validation runs on the locked snapshot, not the route's earlier read.
         with self.repository.transaction(incident_id) as transaction:
             incident = transaction.incident
-            now = self.clock()
-            if data.determined_at < incident.discovered_at or data.determined_at > now:
-                raise ApiError(
-                    400,
-                    "INVALID_DETERMINED_AT",
-                    "determinedAt must not be before discoveredAt or in the future",
-                )
-            owned = {item.evidence_id for item in incident.evidence}
-            if any(item not in owned for item in data.evidence_ids):
-                raise ApiError(
-                    400, "INVALID_EVIDENCE_IDS", "evidenceIds must all belong to this incident"
-                )
+            self.validate_decision(incident, data)
             if decision_status(incident) in (
                 IncidentStatus.MATERIAL_PENDING_FILING,
                 IncidentStatus.FILED,

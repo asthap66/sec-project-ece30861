@@ -216,9 +216,88 @@ class DeadlineQuery(APISchema):
     as_of: RequestTimestamp | None = Field(default=None, alias="as_of")
 
 
+class CorrectionCreate(DecisionCreate):
+    corrects_decision_id: RequiredText
+
+    @field_validator("corrects_decision_id")
+    @classmethod
+    def reject_blank_reference(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Must not be blank")
+        return value
+
+
+class FilingTimeliness(StrEnum):
+    ON_TIME = "ON_TIME"
+    LATE = "LATE"
+
+
+class FilingCreate(APISchema):
+    filed_at: RequestTimestamp
+    accession_number: RequiredText
+
+    @field_validator("filed_at")
+    @classmethod
+    def normalize_timestamp(cls, value: datetime) -> datetime:
+        return value.astimezone(UTC)
+
+    @field_validator("accession_number")
+    @classmethod
+    def reject_blank_accession(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Must not be blank")
+        return value
+
+
+class FilingDetail(FilingCreate):
+    filing_id: str
+    timeliness: FilingTimeliness
+    business_days_late: int = Field(strict=True, ge=0)
+
+
+class FilingCreated(APISchema):
+    filing_id: str
+    status: IncidentStatus
+    timeliness: FilingTimeliness
+    business_days_late: int = Field(strict=True, ge=0)
+
+
+class HistoryEventType(StrEnum):
+    INCIDENT_CREATED = "INCIDENT_CREATED"
+    EVIDENCE_ADDED = "EVIDENCE_ADDED"
+    DECISION_RECORDED = "DECISION_RECORDED"
+    DECISION_CORRECTED = "DECISION_CORRECTED"
+    FILING_RECORDED = "FILING_RECORDED"
+
+
+class HistoryEvent(APISchema):
+    event_type: HistoryEventType
+    recorded_at: AwareDatetime
+    reference_id: str
+
+    @field_validator("recorded_at")
+    @classmethod
+    def normalize_timestamp(cls, value: datetime) -> datetime:
+        return value.astimezone(UTC)
+
+
+class EvidenceCounts(APISchema):
+    technical: int = Field(strict=True, ge=0)
+    business_impact: int = Field(strict=True, ge=0)
+    legal: int = Field(strict=True, ge=0)
+    other: int = Field(strict=True, ge=0)
+
+
+class IncidentTimeline(APISchema):
+    incident_id: str
+    events: list[HistoryEvent]
+    evidence_counts: EvidenceCounts
+    discovery_to_determination_days: float | None
+
+
 class IncidentDetail(IncidentResponse):
-    """Incident, linked evidence and current decision; filings remain Phase 5."""
+    """Incident, linked evidence and current decision; including a filing when available."""
 
     evidence: list[EvidenceResponse] = Field(default_factory=list)
     current_decision: DecisionDetail | None = None
-    filing: None = None
+    filing: FilingDetail | None = None
