@@ -1,0 +1,38 @@
+{
+  "conditions": {
+    "date": "2026-11-02T01:55:58Z",
+    "target": "http://127.0.0.1:8045",
+    "client_commit": "55777d0",
+    "client_host": "Darwin arm64, Python 3.12.1",
+    "incidents_loaded": 100,
+    "load_seconds": 1.28,
+    "mode": "sequential, one request at a time",
+    "seed": 30861
+  },
+  "summary": {
+    "requests": 200,
+    "errors": 0,
+    "within_threshold": 200,
+    "share_within_threshold": 1.0,
+    "threshold_seconds": 1.0,
+    "required_share": 0.95,
+    "p50_ms": 19.4,
+    "p95_ms": 46.8,
+    "max_ms": 90.5,
+    "by_operation": {
+      "GET health": {
+        "count": 10,
+        "p50_ms": 2.6
+      },
+      "GET incident": {
+        "count": 150,
+        "p50_ms": 17.5
+      },
+      "POST evidence": {
+        "count": 40,
+        "p50_ms": 29.4
+      }
+    },
+    "passed": true
+  }
+}

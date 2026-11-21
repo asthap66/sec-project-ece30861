@@ -1,0 +1,4 @@
+{
+  "description": "Incident IDs the tests never create (AC-03): one in the contract's example format, and one in a format no service should generate.",
+  "incidentIds": ["INC-999999", "does-not-exist-000"]
+}

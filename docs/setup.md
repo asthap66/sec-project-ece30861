@@ -26,15 +26,22 @@ uv sync                # creates .venv with Python 3.12, plus runtime and dev de
 uv run uvicorn app.main:app --reload
 ```
 
-The scaffold serves only FastAPI's generated docs (`/docs`, `/openapi.json`). It has no business endpoints yet.
+The app registers health, reset, incident creation/retrieval, and evidence
+attachment endpoints. Configure DATABASE_URL/API_KEY and apply migrations before
+using the persistent endpoints. See [feature integration](incident-evidence.md).
 
 ## Start local PostgreSQL
 
 ```sh
 docker compose up -d db        # PostgreSQL only
-docker compose up --build      # app + PostgreSQL; the app waits for the DB health check
+uv run alembic upgrade head    # create/upgrade the tables
+docker compose up --build      # app + PostgreSQL; the app applies migrations, then starts
 docker compose down            # stop containers; keeps data
 ```
+
+If you already run PostgreSQL on your machine, port 5432 is taken and you'll
+reach that server instead of the container. Set `POSTGRES_PORT=5433` in `.env`
+and use port 5433 (host `127.0.0.1`) in `DATABASE_URL`.
 
 Database data lives in the named volume `pgdata` and survives `docker compose down`. **`docker compose down -v` (or `docker volume rm`) deletes the volume and all local database data.**
 
@@ -47,28 +54,42 @@ uv run mypy
 uv run pytest
 ```
 
-### Acceptance tests (live service)
-
-Tests marked `acceptance` (in `tests/acceptance/`) run against a live service and skip when `BASE_URL` is unset. That is why CI reports them as skipped.
+Tests that need a database (`tests/infrastructure/test_database.py` and
+`tests/infrastructure/test_feature_database.py`) are
+skipped unless `TEST_DATABASE_URL` points at a **disposable** PostgreSQL: they
+reset it. For example, against the local container:
 
 ```sh
-BASE_URL=http://localhost:8000 API_KEY=<key> uv run pytest -m acceptance
+TEST_DATABASE_URL=postgresql+psycopg://incident_app:change-me-local-only@127.0.0.1:5432/incident_db uv run pytest tests/infrastructure
 ```
 
-Tests that call `POST /reset` also require `ALLOW_DESTRUCTIVE_TESTS=1`. Only set that against the agreed synthetic test service, and serialize runs with the other team.
+Acceptance tests run against a running service:
 
-CI (`.github/workflows/ci.yml`) runs the same commands on pushes to `main` and on pull requests.
+```sh
+BASE_URL=http://localhost:8000 API_KEY=replace-with-local-dev-key uv run pytest tests/acceptance
+```
 
-## Current scaffold limitations
+The AC-16 checks (restart persistence, reset, response time) are scripts, not pytest tests, because a restart happens partway through. See [scripts/README.md](../scripts/README.md).
 
-- No business endpoints. `/health`, `/reset`, `/incidents`, and evidence routes do not exist yet.
-- No authentication, database models, migrations, or DB connection code. The app does not connect to PostgreSQL yet.
-- No deployment.
-- Tests that run in CI: the scaffold smoke test and the acceptance-client self-tests. Neither is acceptance coverage.
-- The instructor-provided OpenAPI contract hasn't been added. See `docs/contract-issues.md`.
+CI (`.github/workflows/ci.yml`) runs on pushes to `main` and `integration`, and on pull requests. It does four things:
 
-## Configuration variables (planned, not implemented)
+- Runs the static checks.
+- Runs the non-acceptance tests against a disposable PostgreSQL service (`TEST_DATABASE_URL`), so the database tests run instead of skipping.
+- Migrates and starts the app locally, then runs `pytest -m acceptance` against it with a throwaway key.
+- Runs an AC-16 smoke test against that app: persistence across an app restart, reset, and response time.
 
-- `DATABASE_URL`, `API_KEY`: planned **server** configuration. The scaffold doesn't read them, and the app imports without them.
-- `BASE_URL`, `API_KEY`: **acceptance-runner** configuration (the target service and its key), read by `tests/acceptance/client.py`. The server-side behavior these tests check isn't implemented yet.
-- `ALLOW_DESTRUCTIVE_TESTS=1`: opt-in for acceptance tests that reset the target's data.
+Runs against a deployed service are done separately and are never triggered from CI.
+
+## Current limitations
+
+- Implemented: `GET /health` (public), `POST /reset`, API-key authentication on every other path, the contract's error format, request logging, the Incident/Evidence models and first migration.
+- Incident/evidence routes now use the shared models, session, auth, and error
+  infrastructure. Local PostgreSQL verification and deployment over HTTPS remain
+  unverified; see `docs/incident-evidence.md` for the test scope.
+- Field length limits for `title`/`description` are placeholders in `app/config.py` until the pod agrees on numbers (`docs/contract-issues.md` #3).
+
+## Configuration
+
+- Server: `DATABASE_URL`, `API_KEY` (read on first use, so importing the app doesn't need them). `PORT` sets the listening port in the container (default 8000).
+- Acceptance runner: `BASE_URL`, `API_KEY` (the target service and its key).
+- Local tests: `TEST_DATABASE_URL` (a disposable database; see above).

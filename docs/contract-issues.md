@@ -2,14 +2,23 @@
 
 Owner: Mohit. Record each decision, who agreed to it, and the date it was resolved.
 
-Source checked so far: the pod's common contract in *Phase 2 - Pod.pdf*: Q5.1 interface table, Q5.2 schemas, valid/invalid examples, and AC-01 to AC-16.
+Sources checked: the pod's common contract in *Phase 2 - Pod.pdf* and the user-supplied *Phase 2 - Pod.docx*: Q3.2 models, Q5.1 interface table, Q5.2 schemas, valid/invalid examples, and AC-01 to AC-16.
 
 | # | Issue | Status | Decision |
 | --- | --- | --- | --- |
-| 1 | Obtain the instructor-provided OpenAPI spec, confirm its version, and check how it relates to the Phase 2 common contract. | Open | Not found in any course material available to us (2026-10-16). Request it from the course staff/pod. Until it arrives, the Phase 2 pod contract is the working reference. |
-| 2 | Phase 2 AC-02 mentions listing incidents, but the Phase 2 interface table omits `GET /incidents`. Does the route exist? | Confirmed conflict; proposal awaiting pod agreement | See [Issue 2](#issue-2-get-incidents) below. |
-| 3 | Agree exact field length limits (and the whitespace policy) for incident and evidence fields. | Open | The contract says only `title` and `description` have a "maximum length agreed by both teams". Every other string is just "non-empty". The numbers and the whitespace-only policy are still unagreed. |
-| 4 | Confirm error response formats, and the precedence between validation and authentication failures (e.g. invalid body with a missing API key). | Partly resolved | The contract fixes the format: every error is `{"error": "ERROR_CODE", "message": "..."}`. A missing or invalid key → 401, unknown resource → 404, invalid state → 409, edit/delete attempts → 405. **Precedence is still unspecified.** Working assumption in `tests/acceptance/test_ac14_security.py`: auth is checked before resource lookup (unknown ID without a key → 401). |
+| 1 | Obtain the instructor-provided OpenAPI spec, confirm its version, and check how it relates to the Phase 2 common contract. | Decided (team) | No instructor OpenAPI file could be found. Team decision (Astha, Mohit; 2026-10-16): build and test against the Phase 2 pod specification v1.0 (Q1.3; Q5 common JSON API). If an instructor OpenAPI file turns up, compare it with Q5 and record the differences here. |
+| 2 | Phase 2 AC-02 mentions listing incidents, but the Phase 2 interface table omits `GET /incidents`. Does the route exist? | Confirmed conflict; proposal awaiting pod agreement | AC-02 uses listing; Q5.1 omits a list route. See [Issue 2](#issue-2-get-incidents) below. No extra endpoint added. |
+| 3 | Agree exact field length limits (and the whitespace policy) for incident and evidence fields. | Open | Q5.2 explicitly leaves title/description maximum lengths to team agreement; no numeric limits are provided. Existing nonblank checks preserve submitted text. Integration now reuses shared provisional storage limits (title 200, description 5000, reporterName/source 500) so oversized inputs return 400; these numbers are not pod-approved and need coordinated config/schema/migration review. |
+| 4 | Confirm error response formats, and the precedence between validation and authentication failures (e.g. invalid body with a missing API key). | Resolved by the spec | Q3.2 Model 4: authentication, endpoint/method, incident existence, body validation, workflow state. Q5 requires error/message JSON; REQ-02 and Model 4 require the bad field name for 400. Feature routes now use shared authentication/error infrastructure and check evidence parent existence before parsing the body. Real-app tests exercise authentication-first ordering with an injected repository; PostgreSQL execution remains unverified locally. Exact incident/evidence error codes are not enumerated. |
+
+These are observations from the supplied specification, not newly negotiated pod
+decisions. For Phase 3 only incident/evidence operations are implemented; Q6.1
+retains database, auth, reset, deployment, and persistence verification obligations.
+
+Model 2 uses internal `reported_by` while Q5 uses public `reporterName`; the shared ORM and API both use reporter_name, mapped to reporterName in JSON. `created_at` is internal and is absent
+from Q5 incident retrieval JSON. Later-phase document discrepancies (including
+2025 acceptance dates versus the Model 3 2026–2027 holiday list) need agreement
+before deadline work; no deadline functionality is implemented here.
 
 ## Issue 2: GET /incidents
 
@@ -34,3 +43,17 @@ That is the smallest addition that makes AC-02 and AC-16 testable as written. Or
 **Fallback if the pod declines:** change AC-02 to check that each rejected POST returns 400 naming the bad field, without the count check. Change AC-16 to re-GET each of the 100 IDs it created before the restart, and confirm with 404s after the reset. Either way, the acceptance tests won't call `GET /incidents` until this row is marked agreed.
 
 **Decision:** _pending. Record who agreed and the date._
+
+
+## Phase 4 source review (2026-11-01)
+
+The original pod v1.0 PDF, team design PDF and student-facing testing-interface
+PDF have now been supplied and reviewed. See [the contract review](phase4/contract-review.md)
+for exact resolutions and remaining questions. NOT_MATERIAL, the ordinary
+NOT_MATERIAL-to-MATERIAL transition, full decision detail fields and the Eastern
+date boundary are now source-confirmed. The course PDF supplies the tester
+OpenAPI starter (0.4.2), not a separate domain OpenAPI. Remaining pod agreement
+is needed for the 2025 calendar-list mismatch, general businessDays edges,
+NOT_APPLICABLE businessDays, future as_of, duplicate evidence IDs, text limits,
+and determination equal to discovery. Filing representation differences remain
+Phase 5 work. No new shared rules were negotiated by this source review.

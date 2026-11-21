@@ -1,0 +1,55 @@
+{
+  "description": "Invalid POST /incidents bodies. Each must return 400 naming expected.field, and must not create an incident (AC-02). The first three are AC-02's listed cases. Length-limit cases wait for docs/contract-issues.md #3.",
+  "cases": [
+    {
+      "name": "ac02-missing-description",
+      "body": {"title": "Missing description", "discoveredAt": "2025-03-14T09:30:00Z", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "description"}
+    },
+    {
+      "name": "ac02-timestamp-without-offset",
+      "body": {"title": "No offset", "description": "Timestamp lacks a timezone offset.", "discoveredAt": "2025-03-14T09:30:00", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "discoveredAt"}
+    },
+    {
+      "name": "ac02-future-discovery",
+      "body": {"title": "Future discovery", "description": "Discovered in the future.", "discoveredAt": "2099-01-01T00:00:00Z", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "discoveredAt"}
+    },
+    {
+      "name": "missing-title",
+      "body": {"description": "No title.", "discoveredAt": "2025-03-14T09:30:00Z", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "title"}
+    },
+    {
+      "name": "missing-discovered-at",
+      "body": {"title": "No timestamp", "description": "No discoveredAt.", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "discoveredAt"}
+    },
+    {
+      "name": "missing-reporter-name",
+      "body": {"title": "No reporter", "description": "No reporterName.", "discoveredAt": "2025-03-14T09:30:00Z"},
+      "expected": {"httpStatus": 400, "field": "reporterName"}
+    },
+    {
+      "name": "empty-title",
+      "body": {"title": "", "description": "Empty title.", "discoveredAt": "2025-03-14T09:30:00Z", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "title"}
+    },
+    {
+      "name": "empty-reporter-name",
+      "body": {"title": "Empty reporter", "description": "Empty reporterName.", "discoveredAt": "2025-03-14T09:30:00Z", "reporterName": ""},
+      "expected": {"httpStatus": 400, "field": "reporterName"}
+    },
+    {
+      "name": "malformed-timestamp",
+      "body": {"title": "Bad timestamp", "description": "Not a date.", "discoveredAt": "yesterday", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "discoveredAt"}
+    },
+    {
+      "name": "title-wrong-type",
+      "body": {"title": 12345, "description": "Title is a number.", "discoveredAt": "2025-03-14T09:30:00Z", "reporterName": "SOC"},
+      "expected": {"httpStatus": 400, "field": "title"}
+    }
+  ]
+}

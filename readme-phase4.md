@@ -253,8 +253,11 @@ Suggested internal interfaces, subject to repository conventions:
 def calculate_deadline(determined_at, holiday_dates):
     """Return the contract deadline date from an aware timestamp."""
 
+
 def describe_deadline(current_decision, as_of, holiday_dates):
     """Return domain status and business-day information."""
+
+
 
 def record_decision(session, incident_id, payload, now):
     """Validate and persist one decision atomically."""
@@ -5028,3 +5031,20 @@ Current implementation source: repository and final deployed revisions, to be in
 This document creates a work plan only.
 No production code, branch protection, deployment, registry row, or external message was changed by creating it.
 All unchecked items remain pending until the team records real evidence.
+
+
+## Mohit implementation handoff — November 1, 2026
+
+Mohit-owned independent work is implemented on `mohit-phase4`: HTTP milestone
+selection, manual calendar fixtures, regression-preserving CI selection, tester
+summary counts, and test/integration instructions. See
+[the detailed report](docs/phase4/mohit-phase4-report.md) for executed results,
+contract dependencies, and remaining release checks. This does not mark Astha's
+or Srihari's features complete, or claim deployed/cross-team Phase 4 success.
+
+
+Mohit source-review follow-up: the supplied v1.0 PDFs now confirm the decision
+schema, NOT_MATERIAL state and subsequent MATERIAL transition, and Eastern
+deadline date boundary. The HTTP suite has 45 Phase 4 cases. See
+[contract review](docs/phase4/contract-review.md) for remaining ambiguities and
+[the report](docs/phase4/mohit-phase4-report.md) for final baseline results.

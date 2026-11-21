@@ -12,6 +12,7 @@ dependencies = [
     "sqlalchemy>=2.0.36",
     "alembic>=1.14",
     "psycopg[binary]>=3.2",
+    "coverage>=7.16.2",
 ]
 
 [dependency-groups]
@@ -33,6 +34,7 @@ include = ["app*"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 markers = [
+    "phase4: decision and deadline milestone (missing features fail visibly)",
     "acceptance: black-box tests against a live service (needs BASE_URL; skipped otherwise)",
 ]
 
@@ -49,5 +51,5 @@ select = ["E", "F", "W", "I", "B", "UP", "N", "S", "SIM"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["app", "tests"]
+files = ["app", "tests", "scripts", "tester"]
 plugins = ["pydantic.mypy"]

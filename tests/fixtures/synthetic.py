@@ -1,7 +1,7 @@
-"""Synthetic, contract-independent test data.
+"""Synthetic timestamp helpers and shared constants.
 
-Owner: Mohit. Request payload builders will be added once the OpenAPI
-contract fixes field names and limits (docs/contract-issues.md #1, #3).
+Owner: Mohit. Request bodies live in the JSON files under tests/fixtures/data/
+(loaded by tests/fixtures/data.py).
 """
 
 from datetime import UTC, datetime, timedelta

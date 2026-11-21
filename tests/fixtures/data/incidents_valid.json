@@ -1,0 +1,45 @@
+{
+  "description": "Valid POST /incidents bodies (AC-01). expected.discoveredAt is the same instant in UTC, as GET /incidents/{incidentId} must return it.",
+  "cases": [
+    {
+      "name": "contract-example-ransomware",
+      "body": {
+        "title": "Order system ransomware",
+        "description": "Encryption detected on production servers.",
+        "discoveredAt": "2026-09-21T14:30:00-04:00",
+        "reporterName": "Security Operations"
+      },
+      "expected": {"status": "OPEN", "discoveredAt": "2026-09-21T18:30:00Z"}
+    },
+    {
+      "name": "utc-z-suffix",
+      "body": {
+        "title": "Phishing campaign against finance team",
+        "description": "Several employees reported credential-harvesting emails.",
+        "discoveredAt": "2025-03-14T09:30:00Z",
+        "reporterName": "Help Desk"
+      },
+      "expected": {"status": "OPEN", "discoveredAt": "2025-03-14T09:30:00Z"}
+    },
+    {
+      "name": "positive-half-hour-offset",
+      "body": {
+        "title": "Unauthorized VPN login",
+        "description": "Successful VPN login from an unrecognized country.",
+        "discoveredAt": "2025-11-02T08:15:00+05:30",
+        "reporterName": "Network Monitoring"
+      },
+      "expected": {"status": "OPEN", "discoveredAt": "2025-11-02T02:45:00Z"}
+    },
+    {
+      "name": "non-ascii-text",
+      "body": {
+        "title": "Exfiltración de datos — servidor de RR. HH.",
+        "description": "Transferencia saliente inusual detectada (≈ 4 GB).",
+        "discoveredAt": "2024-07-01T23:59:59-07:00",
+        "reporterName": "Équipe SOC"
+      },
+      "expected": {"status": "OPEN", "discoveredAt": "2024-07-02T06:59:59Z"}
+    }
+  ]
+}
