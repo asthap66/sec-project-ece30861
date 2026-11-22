@@ -74,3 +74,9 @@ duplicate filing status/error; correction after filing; timeline event shape,
 ordering and timestamp provenance; and whether reset can preserve unrelated
 records. See [the Phase 5 model review](phase5/contract-and-model-review.md).
 No answer is inferred from the current implementation.
+
+Astha's API merge `5e97de8` and `docs/phase5/astha-api-handoff.md` now define
+the Q5.1/Q5.2 request/response shapes and register all three routes. The
+routes return 503 pending Srihari's adapter. The questions above remain open;
+the API handoff lists their present provisional behavior. Mohit's new HTTP
+acceptance suite is kept on a feature branch until the adapter is integrated.

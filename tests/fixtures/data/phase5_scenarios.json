@@ -17,10 +17,11 @@
     "deadline": "2025-10-03"
   },
   "filingCases": [
-    {"name": "before-deadline", "filedAt": "2025-10-02T12:00:00-04:00", "timeliness": "ON_TIME"},
-    {"name": "on-deadline", "filedAt": "2025-10-03T12:00:00-04:00", "timeliness": "ON_TIME"},
-    {"name": "end-of-deadline", "filedAt": "2025-10-03T23:59:59-04:00", "timeliness": "ON_TIME"},
-    {"name": "after-deadline", "filedAt": "2025-10-04T00:00:00-04:00", "timeliness": "LATE"}
+    {"name": "before-deadline", "filedAt": "2025-10-02T12:00:00-04:00", "timeliness": "ON_TIME", "businessDaysLate": 0},
+    {"name": "on-deadline", "filedAt": "2025-10-03T12:00:00-04:00", "timeliness": "ON_TIME", "businessDaysLate": 0},
+    {"name": "end-of-deadline", "filedAt": "2025-10-03T23:59:59-04:00", "timeliness": "ON_TIME", "businessDaysLate": 0},
+    {"name": "after-deadline", "filedAt": "2025-10-04T00:00:00-04:00", "timeliness": "LATE", "businessDaysLate": 0},
+    {"name": "after-business-day", "filedAt": "2025-10-06T12:00:00-04:00", "timeliness": "LATE", "businessDaysLate": 1}
   ],
   "invalidScenarios": [
     "filing-without-material-decision",

@@ -20,7 +20,8 @@ Not included yet: maximum-length boundary cases. They're waiting on the agreed l
 Use synthetic data only. No real incident data and no credentials.
 
 `test_phase5_data.py` checks chronology, Eastern filing-date classifications,
+independent business-days-late examples,
 scenario completeness, and event order without importing production code. It
-does not claim Phase 5 API conformance. The final correction/filing/timeline
-schemas and event timestamps must be checked against Astha's handoff before
-these scenarios become route-level assertions.
+does not claim Phase 5 API conformance. `test_phase5_workflow.py` uses the
+public shapes in Astha's Phase 5 handoff and these fixed inputs; its live HTTP
+checks require Srihari's adapter before they can pass.

@@ -30,3 +30,19 @@ Review the new models when Astha and Srihari deliver them:
    records, and migration upgrades an existing Phase 4 database.
 
 No Phase 5 PDF or replacement diagram is asserted complete by this review.
+
+## Astha API merge review
+
+Integration commit `5e97de8` adds generated OpenAPI paths and the public
+schemas listed in `astha-api-handoff.md`. Four offline contract checks now
+compare required request/response fields, route status codes, event labels,
+and API-key documentation with that handoff. The old “no Phase 5 route” note
+above describes the pre-merge baseline. Routes still return 503 until the
+storage adapter arrives; the schemas do not prove persisted behavior.
+
+The unresolved public questions are stale correction reference status (400 or
+409), duplicate filing status, observable supersession, precise timeline
+duration semantics, and filing/calendar edges. HTTP tests assert exact
+documented fields, current 409 duplicate behavior provisionally, and retained
+history; stale correction reference accepts the two contract-open client-error
+statuses while still requiring a structured error and unchanged state.

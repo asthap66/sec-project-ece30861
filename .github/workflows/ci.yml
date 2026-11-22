@@ -75,7 +75,7 @@ jobs:
           API_KEY: ci-acceptance-key
           # Safe here: the target is the throwaway app and database inside this job.
           ALLOW_DESTRUCTIVE_TESTS: "1"
-        run: uv run pytest -m "acceptance and not phase4"
+        run: uv run pytest -m "acceptance and not phase4 and not phase5"
 
       # Integrated Phase 4 selection: failures now fail this job.
       # Sequential in this job: reset tests never race against Phase 4 writes.
@@ -114,6 +114,27 @@ jobs:
           path: |
             phase5-results.xml
             phase5-events.jsonl
+
+      # Enable this branch only after Srihari's adapter is integrated. The
+      # selection is blocking and never treats 503 as a passing route result.
+      - name: Phase 5 acceptance
+        env:
+          BASE_URL: http://127.0.0.1:8000
+          API_KEY: ci-acceptance-key
+          ALLOW_DESTRUCTIVE_TESTS: "1"
+        run: |
+          export TESTER_RESULTS_FILE="$PWD/phase5-acceptance-events.jsonl"
+          export GIT_COMMIT="$GITHUB_SHA"
+          uv run python -m pytest -m "phase5 and acceptance" -p tester.pytest_plugin --junitxml=phase5-acceptance-results.xml
+
+      - name: Upload Phase 5 acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase5-acceptance-results
+          path: |
+            phase5-acceptance-results.xml
+            phase5-acceptance-events.jsonl
 
       # AC-16 smoke run against the in-job app: restart persistence, reset, and
       # response time. Real results come from runs against the deployment.

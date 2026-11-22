@@ -3,6 +3,7 @@
 import json
 from datetime import UTC, date, datetime
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -33,10 +34,21 @@ def test_decision_fixture_chronology_and_distinct_versions() -> None:
 @pytest.mark.parametrize(
     "case", SCENARIOS["filingCases"], ids=[case["name"] for case in SCENARIOS["filingCases"]]
 )
-def test_filing_date_oracles_use_eastern_calendar_date(case: dict[str, str]) -> None:
+def test_filing_date_oracles_use_eastern_calendar_date(case: dict[str, Any]) -> None:
     deadline = date.fromisoformat(SCENARIOS["incident"]["deadline"])
     filed_date = _instant(case["filedAt"]).astimezone(ZoneInfo("America/New_York")).date()
     assert case["timeliness"] == ("ON_TIME" if filed_date <= deadline else "LATE")
+    assert type(case["businessDaysLate"]) is int
+    assert (
+        case["businessDaysLate"]
+        == {
+            "before-deadline": 0,
+            "on-deadline": 0,
+            "end-of-deadline": 0,
+            "after-deadline": 0,
+            "after-business-day": 1,
+        }[case["name"]]
+    )
     assert _instant(case["filedAt"]) < datetime.now(UTC)
 
 
