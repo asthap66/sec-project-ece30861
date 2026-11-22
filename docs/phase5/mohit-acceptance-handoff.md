@@ -48,10 +48,9 @@ Srihari has implemented the locked correction and filing transactions,
 append-only history, filing-aware incident retrieval, timeline recording
 timestamps/order, migration, and reset support. His handoff records 34/34
 Mohit HTTP cases passing in a trial merge, plus 31 database cases and an
-application-process restart. Run the explicit blocking Phase 5 selection and
-all Phase 3/4 regressions on the final integration CI SHA, then deployed and
-reciprocal tests in agreed reset windows. Preserve raw JUnit/JSONL and exact
-deployed revisions.
+application-process restart. The final integration CI run is recorded below.
+Deployed and reciprocal tests still require agreed reset windows. Preserve raw
+JUnit/JSONL and exact deployed revisions.
 
 The stale correction reference's 400/409 status, duplicate filing response,
 supersession visibility, duration rounding, holiday policy and synthetic-only
@@ -68,5 +67,15 @@ database skips. `uv run pytest -m 'not acceptance' -q` returned 304 passed,
 72 database skips, and 127 deselected. The local disposable Colima VM stalled
 during startup, so a new database-backed run was not completed on this
 machine; the temporary VM was removed. Srihari's passing trial and the
-integration CI run at `9e32887` are separate evidence. The blocking CI run for
-the final merge is still needed before release claims.
+integration CI run at `9e32887` are separate evidence.
+
+## Integration CI — 2026-11-22
+
+The [CI run for merge `83d034d`](https://github.com/asthap66/sec-project-ece30861/actions/runs/44992995189)
+passed with a disposable PostgreSQL service. The non-acceptance selection had
+376 passed; earlier HTTP acceptance had 47 passed and one local HTTPS skip;
+Phase 4 had 45 passed; Phase 5 fixture, OpenAPI and database checks had 42
+passed; Phase 5 HTTP had 34 passed. Ruff, format, mypy, migration/app startup,
+AC-16 process restart, and response time steps passed. JUnit and JSONL
+artifacts were uploaded for Phase 4 and both Phase 5 selections. This is
+local-in-CI evidence, not a deployed or reciprocal cross-team test.

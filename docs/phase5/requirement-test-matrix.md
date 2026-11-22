@@ -26,7 +26,8 @@ domain paths.
 | CI and tester reporting | `phase5` marker, explicit offline and HTTP selections, JUnit/JSONL | Both selections are blocking on integration after merge. Existing tester discovers acceptance files automatically. |
 | Deployed and reciprocal cross-team testing | Existing tester and runbook | Await integrated deployment revision, target URLs/credentials, mutually agreed reset window; record actual raw and structured reports. |
 
-Srihari's handoff records a passing 34-case local HTTP trial of this test
-branch with his adapter. The final integration CI run and Mohit's deployed and
-cross-team evidence remain pending. Contract choices above remain provisional;
-passing tests do not settle them.
+The [integration CI run for `83d034d`](https://github.com/asthap66/sec-project-ece30861/actions/runs/44992995189)
+passed the 34 Phase 5 HTTP cases, 42 Phase 5 fixture/OpenAPI/database checks,
+45 Phase 4 HTTP cases, and 376 non-acceptance cases against disposable
+PostgreSQL. Deployed and reciprocal cross-team evidence remains pending.
+Contract choices above remain provisional; passing tests do not settle them.
