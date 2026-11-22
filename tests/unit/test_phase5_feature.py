@@ -191,7 +191,7 @@ def test_missing_incident_and_failed_commit(workflow: tuple[Phase5Service, Repos
     assert len(repo.history) == 1 and service.get_incident("INC-001") == before
 
 
-def test_phase5_routes_require_auth_and_report_missing_adapter(
+def test_phase5_routes_require_auth_and_use_the_integrated_adapter(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     from fastapi.testclient import TestClient
@@ -213,8 +213,11 @@ def test_phase5_routes_require_auth_and_report_missing_adapter(
                 assert (
                     client.request(method, path, headers={"X-API-Key": "wrong"}).status_code == 401
                 )
-                response = client.request(method, path, headers={"X-API-Key": "test-secret"})
-                assert response.status_code == 503
-                assert response.json()["error"] == "PHASE5_DEPENDENCIES_UNAVAILABLE"
+                if method == "POST":
+                    # The persistence adapter is integrated: a valid key reaches
+                    # request validation instead of the old 503 placeholder.
+                    response = client.request(method, path, headers={"X-API-Key": "test-secret"})
+                    assert response.status_code == 400
+                    assert response.json()["error"] != "PHASE5_DEPENDENCIES_UNAVAILABLE"
     finally:
         get_settings.cache_clear()

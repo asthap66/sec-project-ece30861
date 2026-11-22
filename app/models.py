@@ -30,7 +30,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
-    func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -38,14 +38,21 @@ from app.config import DESCRIPTION_MAX_LENGTH, SHORT_TEXT_MAX_LENGTH, TITLE_MAX_
 from app.db import Base
 
 INCIDENT_STATUSES = ("OPEN", "NOT_MATERIAL", "MATERIAL_PENDING_FILING", "FILED")
+TIMELINESS = ("ON_TIME", "LATE")
 EVIDENCE_CATEGORIES = ("TECHNICAL", "BUSINESS_IMPACT", "LEGAL", "OTHER")
 DECISIONS = ("MATERIAL", "NOT_MATERIAL")
 
 # Project data cleared by /reset and /test/setup, in one TRUNCATE (so child
 # rows go with their parents). RESTART IDENTITY restarts INC/EVD/DEC numbering.
 RESET_PROJECT_DATA = (
-    "TRUNCATE TABLE decision_evidence, decisions, evidence, incidents RESTART IDENTITY"
+    "TRUNCATE TABLE filings, decision_evidence, decisions, evidence, incidents RESTART IDENTITY"
 )
+
+# Recording times use the time of the insert, not the start of the transaction
+# (now()). A decision or filing transaction first waits for the incident lock;
+# with now() it could be stamped earlier than the write it waited behind, and
+# the timeline would show them out of order. Migration 0004.
+RECORDED_NOW = text("clock_timestamp()")
 
 
 def _public_id(prefix: str) -> Computed:
@@ -73,7 +80,9 @@ class Incident(Base):
     reporter_name: Mapped[str] = mapped_column(String(SHORT_TEXT_MAX_LENGTH))
     # Phase 3 incidents stay OPEN; decisions and filings change it in Phase 4.
     status: Mapped[str] = mapped_column(String(32), default="OPEN", server_default="OPEN")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=RECORDED_NOW
+    )
 
     evidence: Mapped[list["Evidence"]] = relationship(
         back_populates="incident", order_by="Evidence.id"
@@ -98,7 +107,7 @@ class Evidence(Base):
     collected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     # Set by the server, never taken from the request (contract: response only).
     recorded_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=RECORDED_NOW
     )
 
     incident: Mapped[Incident] = relationship(back_populates="evidence")
@@ -133,8 +142,13 @@ class Decision(Base):
     decided_by: Mapped[str] = mapped_column(Text)
     rationale: Mapped[str] = mapped_column(Text)
     recorded_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=RECORDED_NOW
     )
+    # Phase 5: a correction is a new row pointing at the decision it replaces.
+    # NULL for an original decision. Unique, so a decision is superseded at
+    # most once and the history is one chain; the composite key keeps it in
+    # the same incident.
+    corrects_decision_id: Mapped[int | None] = mapped_column(BigInteger, unique=True)
 
     evidence_links: Mapped[list["DecisionEvidence"]] = relationship(
         order_by="DecisionEvidence.position"
@@ -143,6 +157,16 @@ class Decision(Base):
     __table_args__ = (
         CheckConstraint(_one_of("decision", DECISIONS), name="decision_valid"),
         UniqueConstraint("id", "incident_id", name="decisions_id_incident_key"),
+        ForeignKeyConstraint(
+            ["corrects_decision_id", "incident_id"],
+            ["decisions.id", "decisions.incident_id"],
+            ondelete="RESTRICT",
+            name="decisions_corrects_fkey",
+        ),
+        CheckConstraint(
+            "corrects_decision_id IS NULL OR corrects_decision_id <> id",
+            name="corrects_other_decision",
+        ),
     )
 
 
@@ -178,6 +202,37 @@ class DecisionEvidence(Base):
     )
 
 
+class Filing(Base):
+    """The incident's SEC filing (Phase 5). At most one per incident; append-only.
+
+    Timeliness and business_days_late are stored as classified when the filing
+    was recorded (by Phase5Service with the shared calendar), so the record
+    never changes after the fact. Its presence makes the incident FILED.
+    """
+
+    __tablename__ = "filings"
+    __mapper_args__ = {"eager_defaults": True}  # fetch public_id/recorded_at on insert
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    public_id: Mapped[str] = mapped_column(String(32), _public_id("FIL"), unique=True)
+    incident_id: Mapped[int] = mapped_column(
+        ForeignKey("incidents.id", ondelete="RESTRICT"), unique=True
+    )
+    filed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    accession_number: Mapped[str] = mapped_column(Text)
+    timeliness: Mapped[str] = mapped_column(String(16))
+    business_days_late: Mapped[int] = mapped_column(Integer)
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=RECORDED_NOW
+    )
+
+    __table_args__ = (
+        CheckConstraint(_one_of("timeliness", TIMELINESS), name="timeliness_valid"),
+        CheckConstraint("business_days_late >= 0", name="business_days_late_nonnegative"),
+        CheckConstraint("length(btrim(accession_number)) > 0", name="accession_not_blank"),
+    )
+
+
 class TestSession(Base):
     """A session created by POST /test/setup (course testing interface).
 
@@ -188,4 +243,6 @@ class TestSession(Base):
     __tablename__ = "test_sessions"
 
     session_id: Mapped[str] = mapped_column(String(200), primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()")
+    )
