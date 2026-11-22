@@ -1,11 +1,12 @@
-"""Contract routes; unavailable until the Phase 5 repository is integrated."""
+"""Phase 5 contract routes: corrections, filing and timeline."""
 
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path
+from sqlalchemy.orm import Session
 
+from app.db import get_db
 from app.deadline_calendar import SHARED_CALENDAR
-from app.errors import ApiError
 from app.schemas import (
     CorrectionCreate,
     DecisionCreated,
@@ -14,12 +15,14 @@ from app.schemas import (
     IncidentTimeline,
 )
 from app.services.phase5 import Phase5Repository, Phase5Service
+from app.services.phase5_store import SQLAlchemyPhase5Repository
 
 router = APIRouter(tags=["phase5"])
 
 
-def get_phase5_repository() -> Phase5Repository:
-    raise ApiError(503, "PHASE5_DEPENDENCIES_UNAVAILABLE", "Phase 5 persistence is not integrated")
+def get_phase5_repository(session: Annotated[Session, Depends(get_db)]) -> Phase5Repository:
+    """PostgreSQL Phase 5 storage on the request's shared session."""
+    return SQLAlchemyPhase5Repository(session)
 
 
 def get_phase5_service(

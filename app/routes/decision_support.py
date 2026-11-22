@@ -8,15 +8,18 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deadline_calendar import SHARED_CALENDAR
 from app.errors import ApiError
-from app.services.decision_store import SQLAlchemyDecisionRepository
 from app.services.decisions import DeadlineCalculator, DecisionRepository, DecisionService
+from app.services.phase5_store import SQLAlchemyPhase5Repository
 
 
 def get_decision_repository(
     session: Annotated[Session, Depends(get_db)],
 ) -> DecisionRepository | None:
-    """PostgreSQL decisions on the request's shared session (never a second one)."""
-    return SQLAlchemyDecisionRepository(session)
+    """PostgreSQL decisions on the request's shared session (never a second one).
+
+    The Phase 5 adapter, so incident detail and decisions see corrections and
+    the filing (FILED) as well."""
+    return SQLAlchemyPhase5Repository(session)
 
 
 def get_deadline_calculator() -> DeadlineCalculator | None:
