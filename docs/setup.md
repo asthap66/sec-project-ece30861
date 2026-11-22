@@ -82,11 +82,20 @@ CI (`.github/workflows/ci.yml`) runs on pushes to `main` and `integration`, and 
 
 Runs against a deployed service are done separately and are never triggered from CI.
 
-The `phase5` selection currently validates independent scenario fixtures only.
-It produces JUnit and JSONL artifacts in CI and fails the job if those checks
-fail. It does not include Phase 5 route acceptance tests yet: correction,
-filing and timeline endpoints and final request/response schemas have not been
-merged. See [Phase 5 test matrix](phase5/requirement-test-matrix.md).
+The `phase5 and not acceptance` selection validates independent scenario
+fixtures and Phase 5 database checks when `TEST_DATABASE_URL` is set. The
+`phase5 and acceptance` selection exercises correction, filing and timeline
+routes against a running service. It is blocking: a route failure fails CI.
+Both selections produce JUnit and JSONL artifacts in CI. See the
+[Phase 5 test matrix](phase5/requirement-test-matrix.md).
+
+Against a disposable local service with migration 0004 applied, run:
+
+```sh
+BASE_URL=http://127.0.0.1:8000 API_KEY=<local-key> uv run python -m pytest \
+  -m "phase5 and acceptance" -p tester.pytest_plugin \
+  --junitxml=phase5-acceptance-results.xml
+```
 
 ## Current limitations
 
