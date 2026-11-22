@@ -22,15 +22,26 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.errors import ApiError
-from app.models import Decision, DecisionEvidence, Evidence, Incident
-from app.schemas import DecisionCreate, DecisionDetail, IncidentDetail
+from app.models import Decision, DecisionEvidence, Evidence, Filing, Incident
+from app.schemas import DecisionCreate, DecisionDetail, FilingDetail, IncidentDetail
 from app.services.decisions import DecisionTransaction
 from app.services.incidents import IncidentNotFoundError, incident_snapshot
 
 
 def _load(session: Session, incident: Incident) -> IncidentDetail:
-    """Incident, all its evidence and its newest decision, as a detached snapshot."""
+    """Incident, all its evidence, its newest decision and its filing (Phase 5),
+    as a detached snapshot. A correction is a newer row, so "newest by id" is
+    the corrected decision; a filing makes DecisionService report FILED."""
     snapshot = incident_snapshot(incident)
+    filing = session.scalar(select(Filing).where(Filing.incident_id == incident.id))
+    if filing is not None:
+        snapshot.filing = FilingDetail(
+            filing_id=filing.public_id,
+            filed_at=filing.filed_at,
+            accession_number=filing.accession_number,
+            timeliness=filing.timeliness,
+            business_days_late=filing.business_days_late,
+        )
     current = session.scalar(
         select(Decision)
         .where(Decision.incident_id == incident.id)
