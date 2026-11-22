@@ -98,8 +98,8 @@ jobs:
             phase4-results.xml
             phase4-events.jsonl
 
-      # Independent Phase 5 fixture checks are enforceable now. No API
-      # conformance is inferred from this selection while routes are absent.
+      # Phase 5 fixtures, OpenAPI checks, and database checks. HTTP conformance
+      # is verified separately against the locally served app below.
       - name: Phase 5 fixture validation
         run: |
           export TESTER_RESULTS_FILE="$PWD/phase5-events.jsonl"
@@ -115,8 +115,7 @@ jobs:
             phase5-results.xml
             phase5-events.jsonl
 
-      # Enable this branch only after Srihari's adapter is integrated. The
-      # selection is blocking and never treats 503 as a passing route result.
+      # The integrated Phase 5 HTTP selection is blocking. A 503 is a failure.
       - name: Phase 5 acceptance
         env:
           BASE_URL: http://127.0.0.1:8000

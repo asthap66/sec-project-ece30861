@@ -80,3 +80,10 @@ the Q5.1/Q5.2 request/response shapes and register all three routes. The
 routes return 503 pending Srihari's adapter. The questions above remain open;
 the API handoff lists their present provisional behavior. Mohit's new HTTP
 acceptance suite is kept on a feature branch until the adapter is integrated.
+
+Srihari's persistence merge `9e32887` now connects the adapter and migration
+0004. The 503 note is historical. His handoff records a passing 34-case local
+trial of Mohit's acceptance branch and identifies two additional open service
+questions: deadline-status after filing and whether pre-determination/future
+filing timestamps should be rejected. These need pod decisions, not assertions
+invented from the current implementation.

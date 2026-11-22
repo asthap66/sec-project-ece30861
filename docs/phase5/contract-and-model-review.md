@@ -46,3 +46,14 @@ duration semantics, and filing/calendar edges. HTTP tests assert exact
 documented fields, current 409 duplicate behavior provisionally, and retained
 history; stale correction reference accepts the two contract-open client-error
 statuses while still requiring a structured error and unchanged state.
+
+## Srihari persistence merge review
+
+Integration commit `9e32887` adds migration 0004, correction links and filing
+rows, a filing-aware incident snapshot, and a database-backed timeline ordered
+by recording time. Its handoff reports fresh/upgraded migration tests,
+transaction and race tests, a process restart, reset, and a passing trial of
+Mohit's 34 HTTP cases. The earlier 503 statement describes the pre-adapter
+baseline. The remaining model questions concern filed deadline status,
+filing-time sanity, duration rounding, stale reference response, and reset
+scope. No new Phase 5 model PDF is claimed complete here.
