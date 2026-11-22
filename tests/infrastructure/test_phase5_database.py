@@ -371,3 +371,159 @@ def test_recording_times_use_the_insert_time(database: str) -> None:
         )
     assert len(defaults) == 4
     assert all("clock_timestamp()" in str(value) for value in defaults.values()), defaults
+
+
+# ------------------------------------------------------------------ edge cases
+
+
+def test_correcting_an_incident_with_no_decision_writes_nothing(
+    database: str, client: TestClient
+) -> None:
+    incident = incident_with_evidence(client)
+    assert correct(client, incident, "DEC-001").status_code == 400
+    assert counts() == (0, 0)
+
+
+def test_not_material_corrected_to_material_can_then_be_filed(
+    database: str, client: TestClient
+) -> None:
+    incident = incident_with_evidence(client)
+    first = decide(client, incident, decision="NOT_MATERIAL").json()["decisionId"]
+    made = correct(client, incident, first, decision="MATERIAL")  # Tue 2025-09-30 -> Mon 10-06
+    assert made.json()["deadline"] == "2025-10-06" and made.json()["status"] == (
+        "MATERIAL_PENDING_FILING"
+    )
+    filed = file(client, incident, ON_TIME)  # Fri 10-03, before the corrected deadline
+    assert filed.json()["timeliness"] == "ON_TIME"
+    assert counts() == (2, 1)
+
+
+def test_material_correction_outside_the_calendar_years_writes_nothing(
+    database: str, client: TestClient
+) -> None:
+    incident, original = material(client)
+    response = correct(
+        client, incident, original, decision="MATERIAL", determinedAt="2024-06-03T12:00:00Z"
+    )
+    assert response.status_code == 400
+    assert counts() == (1, 0)
+
+
+def test_filing_outside_the_calendar_years_writes_nothing(
+    database: str, client: TestClient
+) -> None:
+    incident, _ = material(client)
+    late = {"filedAt": "2028-01-05T12:00:00-05:00", "accessionNumber": "x"}
+    response = file(client, incident, late)
+    assert response.status_code == 400 and response.json()["error"] == "DATE_OUT_OF_RANGE"
+    assert counts() == (1, 0)
+    assert detail(client, incident)["status"] == "MATERIAL_PENDING_FILING"
+
+
+def test_late_on_a_weekend_is_late_with_zero_business_days(
+    database: str, client: TestClient
+) -> None:
+    incident, _ = material(client)
+    saturday = {"filedAt": "2025-10-04T00:00:00-04:00", "accessionNumber": "x"}  # deadline Fri
+    made = file(client, incident, saturday).json()
+    assert (made["timeliness"], made["businessDaysLate"]) == ("LATE", 0)
+    assert detail(client, incident)["filing"]["businessDaysLate"] == 0
+
+
+def test_concurrent_corrections_of_the_same_decision(database: str) -> None:
+    app = create_app()
+    with TestClient(app) as setup:
+        incident, original = material(setup)
+    gate = Barrier(2)
+
+    def submit(_: int) -> int:
+        with TestClient(app) as client:
+            gate.wait()
+            return int(correct(client, incident, original).status_code)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        codes = sorted(pool.map(submit, range(2)))
+    assert codes == [201, 400]  # the loser's reference is no longer current
+    assert counts() == (2, 0)
+
+
+def test_correction_racing_a_filing_leaves_a_consistent_state(database: str) -> None:
+    app = create_app()
+    with TestClient(app) as setup:
+        incident, original = material(setup)
+    gate = Barrier(2)
+
+    def run(which: str) -> tuple[str, int]:
+        with TestClient(app) as client:
+            gate.wait()
+            response = (
+                file(client, incident) if which == "file" else correct(client, incident, original)
+            )
+            return which, int(response.status_code)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        codes = dict(pool.map(run, ["file", "correct"]))
+    with TestClient(app) as client:
+        state = detail(client, incident)
+    if codes["file"] == 201:  # filed first: a filed incident can't be corrected
+        assert codes["correct"] == 409 and state["status"] == "FILED"
+        assert counts() == (1, 1)
+    else:  # corrected to NOT_MATERIAL first: nothing left to file
+        assert codes == {"file": 409, "correct": 201} and state["status"] == "NOT_MATERIAL"
+        assert counts() == (2, 0)
+
+
+def test_evidence_after_filing_is_recorded_in_order(database: str, client: TestClient) -> None:
+    incident, _ = material(client)
+    filed = file(client, incident).json()["filingId"]
+    for category in ("TECHNICAL", "LEGAL", "OTHER", "TECHNICAL"):
+        response = client.post(
+            f"/incidents/{incident}/evidence",
+            json={
+                "category": category,
+                "summary": "s",
+                "source": "x",
+                "collectedAt": "2020-01-02T00:00:00Z",
+            },
+            headers=KEY,
+        )
+        assert response.status_code == 201
+    body = timeline(client, incident)
+    kinds = [e["eventType"] for e in body["events"]]
+    assert kinds.index("FILING_RECORDED") == 3 and kinds[4:] == ["EVIDENCE_ADDED"] * 4
+    assert body["events"][3]["referenceId"] == filed
+    assert body["evidenceCounts"] == {"technical": 2, "businessImpact": 1, "legal": 1, "other": 1}
+
+
+def test_ordinary_decision_after_a_not_material_correction(
+    database: str, client: TestClient
+) -> None:
+    incident, original = material(client)
+    corrected = correct(client, incident, original).json()["decisionId"]  # NOT_MATERIAL
+    later = decide(client, incident, determinedAt="2025-10-01T10:00:00-04:00")
+    assert later.status_code == 201
+    events = [(e["eventType"], e["referenceId"]) for e in timeline(client, incident)["events"]]
+    assert events[-3:] == [
+        ("DECISION_RECORDED", original),
+        ("DECISION_CORRECTED", corrected),
+        ("DECISION_RECORDED", later.json()["decisionId"]),
+    ]
+    assert detail(client, incident)["currentDecision"]["decisionId"] == later.json()["decisionId"]
+
+
+def test_downgrade_with_phase5_rows_then_upgrade(database: str) -> None:
+    from alembic import command
+    from alembic.config import Config
+
+    config = Config("alembic.ini")
+    with TestClient(create_app()) as client:
+        incident, original = material(client)
+        correct(client, incident, original, decision="MATERIAL")
+        assert file(client, incident).status_code == 201
+    command.downgrade(config, "0003")  # filings dropped; both decisions kept
+    with db_module.get_engine().connect() as conn:
+        assert conn.scalar(text("SELECT count(*) FROM decisions")) == 2
+    command.upgrade(config, "head")
+    with TestClient(create_app()) as client:
+        assert detail(client, incident)["status"] == "MATERIAL_PENDING_FILING"
+        assert file(client, incident).status_code == 201

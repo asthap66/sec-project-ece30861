@@ -113,6 +113,39 @@ One existing test changed: Astha's
 placeholder. It is now `..._use_the_integrated_adapter`: same 401 checks, and
 a valid key now reaches validation (400) instead of 503.
 
+## Second check (edge cases, trial merge)
+
+Ten more database tests (31 in `test_phase5_database.py`), all passing:
+correction with no decision yet (400, no rows); NOT_MATERIAL corrected to
+MATERIAL then filed; material correction or filing outside the calendar's
+2025-2027 (400 `DATE_OUT_OF_RANGE`, no rows); LATE on the Saturday after the
+deadline stored with 0 business days; two concurrent corrections of one
+decision (`[201, 400]`); a correction racing a filing (one wins, state stays
+consistent either way); evidence added after the filing (appears after it,
+counts per category); an ordinary decision after a NOT_MATERIAL correction;
+downgrade with corrections and filings present, then upgrade. The three race
+tests passed 15 of 15 repeated runs.
+
+Trial merge of `mohit-phase5-acceptance` (71f1b4d) into this branch: no
+conflicts. Replaying `.github/workflows/ci.yml` on the merged tree with one
+fresh database: ruff, format and mypy pass; `not acceptance` 366 passed; Phase 3
+acceptance 47 passed (1 HTTPS skip); Phase 4 45 passed; Phase 5 fixtures 32
+passed; **Phase 5 acceptance (blocking) 34 passed**; AC-16 restart 100/100
+incidents intact; no errors in the app log.
+
+### Found while probing (service/contract, not storage; for Astha and the pod)
+
+- **deadline-status after filing.** An incident filed ON_TIME still reports
+  `{"status": "OVERDUE", "businessDays": 10}` from
+  `GET /incidents/{id}/deadline-status` once the deadline has passed, because
+  `DecisionService.deadline_status` ignores the filing. The contract does not
+  say what FILED incidents should report; NOT_APPLICABLE (or a filed state) is
+  the likely intent. Needs a pod decision, then a small service change.
+- **Filing time sanity.** A filing dated before the determination (filed
+  2025-09-10, decided 2025-09-29) is accepted as ON_TIME, and a future
+  `filedAt` is accepted. Astha's handoff leaves this open on purpose; the pod
+  should decide whether these are 400s.
+
 ## Not done yet
 
 - **Deployment.** Needs the reviewed integration commit. Steps: merge this
