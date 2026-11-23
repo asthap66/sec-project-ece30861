@@ -175,8 +175,8 @@ sequenceDiagram
     end
     R->>DB: SELECT evidence, decisions, filing of the incident
     R->>R: events sorted by recorded_at, then kind, then row id
-    R->>R: evidenceCounts by category; days from discoveredAt to current determinedAt
-    R->>DB: ROLLBACK (release the shared lock; nothing written)
+    R->>R: evidenceCounts by category, days from discoveredAt to current determinedAt
+    R->>DB: ROLLBACK (release the shared lock, nothing written)
     R-->>Client: 200 incidentId, events, evidenceCounts, discoveryToDeterminationDays
 ```
 
