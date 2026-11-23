@@ -2,6 +2,9 @@
 
 Owner: Astha; Srihari reviews architecture and storage. Feeds submission Q5.
 
+Phase 5: [storage, state machine, correction/filing/timeline flows and deployment as delivered](phase5-storage-workflow.md)
+(Srihari, at `edb3573` / `incident-api-00010-srt`).
+
 Phase 4: [decision state, snapshot and request-flow models](phase4-decisions.md)
 describe the implemented feature interfaces;
 [storage, deadline and deployment models](phase4-storage-deployment.md)
